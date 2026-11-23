@@ -25,7 +25,7 @@ async def solver_unavailable(
 
 def create_app(*, rate_limit: int | None = None) -> FastAPI:
     application = FastAPI(
-        title="RantaiTangguh API",
+        title="Pasok-Siaga API",
         description="Analisis jaringan pasok dan optimasi produksi berbasis skenario.",
         version="0.1.0",
     )

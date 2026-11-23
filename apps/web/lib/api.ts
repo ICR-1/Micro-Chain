@@ -20,7 +20,7 @@ async function request<T>(path: string, signal?: AbortSignal, payload?: object):
     });
   } catch (error) {
     if (signal?.aborted) throw error;
-    throw new Error("API RantaiTangguh belum dapat dihubungi. Periksa koneksi lalu coba lagi.");
+    throw new Error("API Pasok-Siaga belum dapat dihubungi. Periksa koneksi lalu coba lagi.");
   }
   const data = await response.json().catch(() => null);
   if (!response.ok) throw new Error(describeError(data, response.status));

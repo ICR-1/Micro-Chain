@@ -17,6 +17,8 @@ test("demo menghubungkan jaringan, optimasi, perbandingan, dan perubahan stok", 
   const fatalErrors: string[] = [];
   page.on("pageerror", (error) => fatalErrors.push(error.message));
   await page.goto("/");
+  await expect(page).toHaveTitle("Pasok-Siaga");
+  await expect(page.getByRole("banner").getByRole("link", { name: "Pasok-Siaga, beranda" })).toHaveText("Pasok-Siaga");
   await page.getByRole("link", { name: "Coba Demo Dapur Sari" }).click();
   await expect(page).toHaveURL(/\/dashboard\/?$/);
   await expect(page.getByRole("main").getByText(/tepung terigu/i).first()).toBeVisible();

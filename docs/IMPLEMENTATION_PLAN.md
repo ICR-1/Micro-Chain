@@ -1,4 +1,4 @@
-# Rencana Implementasi RantaiTangguh
+# Rencana Implementasi Pasok-Siaga
 
 Bangun monorepo `apps/web` dan `apps/api` dengan satu fixture Dapur Sari. Browser menyimpan input selama sesi. API stateless memvalidasi snapshot, menganalisis jaringan, dan menjalankan solver CP-SAT.
 

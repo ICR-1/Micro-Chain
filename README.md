@@ -1,8 +1,8 @@
-# RantaiTangguh
+# Pasok-Siaga
 
-RantaiTangguh membantu UMKM produsen makanan melihat ketergantungan pemasok, mencoba skenario gangguan, dan memilih rencana produksi dari stok yang tersedia. Demo **Dapur Sari** menggunakan data simulasi tanpa akun.
+Pasok-Siaga membantu UMKM produsen makanan melihat ketergantungan pemasok, mencoba skenario gangguan, dan memilih rencana produksi dari stok yang tersedia. Demo **Dapur Sari** menggunakan data simulasi tanpa akun.
 
-[Buka demo RantaiTangguh](https://rantaitangguh.vercel.app/) · [Dokumentasi API produksi](https://rantaitangguh-api.vercel.app/docs)
+[Buka demo Pasok-Siaga](https://pasok-siaga.vercel.app/) · [Dokumentasi API produksi](https://pasok-siaga-api.vercel.app/docs)
 
 - **Jaringan Pasok** menampilkan hubungan pemasok, bahan, dan produk dengan graf interaktif dan daftar untuk layar kecil.
 - **Simulator** menghitung produksi dan pembelian alternatif dari stok, permintaan, resep, kapasitas, dan tanggal kedatangan. FastAPI menjalankan Google OR-Tools CP-SAT.

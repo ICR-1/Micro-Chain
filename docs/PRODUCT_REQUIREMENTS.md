@@ -1,6 +1,6 @@
 # Kebutuhan Produk
 
-RantaiTangguh membantu pengelola UMKM makanan mengetahui produk mana yang dapat dibuat ketika pengiriman bahan baku terlambat atau gagal. Pengguna melihat hubungan pemasok, bahan, dan produk, lalu membandingkan beberapa pilihan produksi dengan persediaan dan biaya yang sama.
+Pasok-Siaga membantu pengelola UMKM makanan mengetahui produk mana yang dapat dibuat ketika pengiriman bahan baku terlambat atau gagal. Pengguna melihat hubungan pemasok, bahan, dan produk, lalu membandingkan beberapa pilihan produksi dengan persediaan dan biaya yang sama.
 
 ## Alur demo P0
 

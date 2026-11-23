@@ -1,7 +1,7 @@
 [project]
-name = "rantaitangguh-api"
+name = "pasok-siaga-api"
 version = "0.1.0"
-description = "API simulasi ketahanan rantai pasok RantaiTangguh"
+description = "API simulasi ketahanan rantai pasok Pasok-Siaga"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi>=0.165,<1",

@@ -6,7 +6,7 @@ import "@fontsource/instrument-serif/400-italic.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "RantaiTangguh", template: "%s | RantaiTangguh" },
+  title: { default: "Pasok-Siaga", template: "%s | Pasok-Siaga" },
   description: "Petakan jaringan pemasok dan hitung rencana produksi ketika pasokan bahan baku terganggu.",
 };
 
