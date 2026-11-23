@@ -11,7 +11,7 @@ const routes = [
   { href: "/dashboard", label: "Ringkasan", mobileLabel: "Ringkasan", icon: LayoutGrid },
   { href: "/network", label: "Jaringan Pasok", mobileLabel: "Jaringan", icon: Network },
   { href: "/simulator", label: "Simulator", mobileLabel: "Simulator", icon: FlaskConical },
-  { href: "/comparison", label: "Perbandingan", mobileLabel: "Bandingkan", accessibleLabel: "Bandingkan skenario (Perbandingan)", icon: ChartNoAxesColumnIncreasing },
+  { href: "/comparison", label: "Perbandingan", mobileLabel: "Bandingkan", icon: ChartNoAxesColumnIncreasing },
   { href: "/data", label: "Data Usaha", mobileLabel: "Data Usaha", icon: Database },
 ];
 
@@ -25,8 +25,8 @@ export function Workspace({ children }: { children: ReactNode }) {
         <div className="sidebar-brand"><Brand /></div>
         <div className="sidebar-business"><span className="business-mark"><Store size={18} aria-hidden="true" /></span><span>Dapur Sari<small>Ruang kerja demo</small></span></div>
         <nav className="workspace-nav" aria-label="Navigasi ruang kerja">
-          {routes.map(({ href, label, mobileLabel, accessibleLabel, icon: Icon }) => (
-            <Link key={href} href={href} aria-current={href === path ? "page" : undefined} aria-label={accessibleLabel ?? label}>
+          {routes.map(({ href, label, mobileLabel, icon: Icon }) => (
+            <Link key={href} href={href} aria-current={href === path ? "page" : undefined}>
               <Icon size={18} aria-hidden="true" />
               <span className="workspace-nav-desktop">{label}</span>
               <span className="workspace-nav-mobile">{mobileLabel}</span>

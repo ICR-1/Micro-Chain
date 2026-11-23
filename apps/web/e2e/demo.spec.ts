@@ -4,7 +4,7 @@ function rupiah(value: string) {
   return new RegExp(`Rp\\s*${value.replace(".", "\\.")}`);
 }
 
-async function openSection(page: Page, name: string) {
+async function openSection(page: Page, name: string | RegExp) {
   const link = page.getByRole("navigation", { name: "Navigasi ruang kerja" }).getByRole("link", { name });
   const href = await link.getAttribute("href");
   await link.click();
@@ -21,7 +21,7 @@ test("demo menghubungkan jaringan, optimasi, perbandingan, dan perubahan stok", 
   await expect(page).toHaveURL(/\/dashboard\/?$/);
   await expect(page.getByRole("main").getByText(/tepung terigu/i).first()).toBeVisible();
 
-  await openSection(page, "Jaringan Pasok");
+  await openSection(page, /^Jaringan(?: Pasok)?$/);
   await expect(page).toHaveURL(/\/network\/?$/);
   if (isMobile) {
     await expect(page.getByRole("button", { name: "Daftar", exact: true })).toHaveAttribute("aria-pressed", "true");
@@ -57,7 +57,7 @@ test("demo menghubungkan jaringan, optimasi, perbandingan, dan perubahan stok", 
   await runScenario(/^Pemasok Utama Gagal$/, 20, 210_000);
   await runScenario(/^Mitigasi: Pemasok Alternatif Aktif$/, 68, 342_000);
 
-  await openSection(page, "Perbandingan");
+  await openSection(page, /^(Perbandingan|Bandingkan)$/);
   await expect(page.getByRole("main").getByText(rupiah("132.000")).first()).toBeVisible();
   await expect(page.getByRole("main").getByText(/55(?:,0)?\s*%/).first()).toBeVisible();
 
