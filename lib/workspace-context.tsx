@@ -7,6 +7,7 @@ import { ApiError, compareAll, putJson, request } from "@/lib/api";
 import { computeInputsSignature } from "@/lib/domain/signature";
 import type { ScenarioConfig, WorkspaceData, WorkspaceSnapshot } from "@/lib/domain/types";
 import { validateWorkspaceData } from "@/lib/domain/validation";
+import { notify } from "@/lib/notify";
 import type { ComparisonResult } from "@/lib/types";
 
 /**
@@ -174,7 +175,11 @@ export function WorkspaceProvider({ mode, children }: { mode: Mode; children: Re
       const view = await compareAll(data);
       if (run === compareRun.current) setComparison({ view, signature: forSignature });
     } catch (err) {
-      if (run === compareRun.current) setComparisonError(err instanceof Error ? err.message : "Perbandingan gagal dihitung.");
+      if (run === compareRun.current) {
+        const message = err instanceof Error ? err.message : "Perbandingan gagal dihitung.";
+        setComparisonError(message);
+        notify.error(message);
+      }
     } finally {
       if (run === compareRun.current) setComparing(false);
     }
@@ -193,8 +198,13 @@ export function WorkspaceProvider({ mode, children }: { mode: Mode; children: Re
       setSavedJson(JSON.stringify(saved));
       setDataState(saved);
       setNotice("Perubahan tersimpan di workspace Anda.");
+      notify.success("Perubahan tersimpan di workspace Anda.");
     } catch (err) {
-      if (!handleUnauthorized(err)) setActionError(err instanceof Error ? err.message : "Gagal menyimpan.");
+      if (!handleUnauthorized(err)) {
+        const message = err instanceof Error ? err.message : "Gagal menyimpan.";
+        setActionError(message);
+        notify.error(message);
+      }
     } finally {
       setSaving(false);
     }
@@ -216,9 +226,15 @@ export function WorkspaceProvider({ mode, children }: { mode: Mode; children: Re
         const ws = await request<WorkspaceData & { businessId: string }>("/api/workspace/reset", { method: "POST" });
         adopt({ snapshot: ws.snapshot, scenarios: ws.scenarios }, ws.businessId);
       }
-      setNotice(mode === "demo" ? "Data dikembalikan ke kondisi awal Dapur Sari." : "Workspace dikosongkan. Mulai isi data usaha Anda di Data Usaha.");
+      const done = mode === "demo" ? "Data dikembalikan ke kondisi awal Dapur Sari." : "Workspace dikosongkan. Mulai isi data usaha Anda di Data Usaha.";
+      setNotice(done);
+      notify.success(done);
     } catch (err) {
-      if (!handleUnauthorized(err)) setActionError(err instanceof Error ? err.message : "Gagal mereset data.");
+      if (!handleUnauthorized(err)) {
+        const message = err instanceof Error ? err.message : "Gagal mereset data.";
+        setActionError(message);
+        notify.error(message);
+      }
     } finally {
       setResetting(false);
     }

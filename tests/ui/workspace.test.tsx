@@ -8,6 +8,7 @@ import { computeInputsSignature } from "@/lib/domain/signature";
 import { compareScenarios } from "@/lib/solver/compare";
 import { solveScenario } from "@/lib/solver/milp-solver";
 
+vi.mock("@/lib/notify", () => ({ notify: { success: vi.fn(), error: vi.fn(), info: vi.fn(), changed: vi.fn() } }));
 vi.mock("@/features/network/network-canvas", () => ({ NetworkCanvas: () => <div data-testid="graph-canvas" /> }));
 vi.mock("@/features/simulation/comparison-chart", () => ({ ComparisonChart: () => <div data-testid="chart" /> }));
 const replace = vi.fn();
@@ -19,6 +20,7 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ auth: { signOut: vi.fn().mockResolvedValue({}) } }) }));
 
+import { notify } from "@/lib/notify";
 import { Workspace } from "@/components/workspace";
 import { Dashboard } from "@/features/dashboard/dashboard";
 import { DataEditor } from "@/features/data-editor/data-editor";
@@ -69,6 +71,7 @@ beforeEach(() => {
   workspaceStatus = 200;
   workspaceKind = "empty";
   replace.mockReset();
+  for (const fn of Object.values(notify)) vi.mocked(fn).mockReset();
   sessionStorage.clear();
   stubMatchMedia(true);
   vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => handler(url, init)));
@@ -455,5 +458,88 @@ describe("Workspace kosong untuk pengguna baru", () => {
     await screen.findByRole("heading", { name: "Hasil Simulasi" });
     expect(screen.getAllByText(/^Rp\s15\.000$/).length).toBeGreaterThan(0);
     expect(screen.getByText("Optimal")).toBeInTheDocument();
+  });
+});
+
+describe("Notifikasi untuk setiap aksi CRUD", () => {
+  it("notifies on add and delete of a supplier, immediately", async () => {
+    await renderPage("demo", "data");
+    await userEvent.type(screen.getByLabelText("Nama pemasok baru"), "Pemasok C");
+    await userEvent.click(screen.getByRole("button", { name: /Tambah Pemasok/ }));
+    expect(notify.success).toHaveBeenCalledWith('Pemasok "Pemasok C" ditambahkan.');
+    await userEvent.click(screen.getByRole("button", { name: /Hapus Pemasok C/ }));
+    expect(notify.success).toHaveBeenCalledWith('Pemasok "Pemasok C" dihapus.');
+  });
+
+  it("notifies on add and delete of materials, products, deliveries and offers", async () => {
+    await renderPage("demo", "data");
+    await userEvent.type(screen.getByLabelText("Nama bahan baru"), "Telur");
+    await userEvent.click(screen.getByRole("button", { name: /Tambah Bahan/ }));
+    expect(notify.success).toHaveBeenCalledWith('Bahan "Telur" ditambahkan.');
+    await userEvent.type(screen.getByLabelText("Nama produk baru"), "Donat");
+    await userEvent.click(screen.getByRole("button", { name: /Tambah Produk/ }));
+    expect(notify.success).toHaveBeenCalledWith('Produk "Donat" ditambahkan.');
+    await userEvent.click(screen.getByRole("button", { name: /Tambah Pengiriman/ }));
+    expect(notify.success).toHaveBeenCalledWith(expect.stringMatching(/Pengiriman terjadwal ditambahkan/));
+    await userEvent.click(screen.getByRole("button", { name: /Tambah Penawaran/ }));
+    expect(notify.success).toHaveBeenCalledWith(expect.stringMatching(/Penawaran alternatif ditambahkan/));
+    await userEvent.click(screen.getByRole("button", { name: /Hapus pengiriman 2/ }));
+    expect(notify.success).toHaveBeenCalledWith("Pengiriman 2 dihapus.");
+    await userEvent.click(screen.getByRole("button", { name: /Hapus Donat/ }));
+    expect(notify.success).toHaveBeenCalledWith(expect.stringMatching(/Produk "Donat" dihapus/));
+  });
+
+  it("uses the merged toast for inline edits instead of one toast per keystroke", async () => {
+    await renderPage("demo", "data");
+    const name = screen.getByLabelText("Nama Pemasok A");
+    await userEvent.type(name, "XYZ");
+    expect(notify.changed).toHaveBeenCalled();
+    expect(notify.changed).toHaveBeenCalledWith("Pemasok diperbarui.");
+    expect(notify.success).not.toHaveBeenCalled();
+  });
+
+  it("notifies when parameters are applied", async () => {
+    await renderPage("demo", "data");
+    const stock = screen.getByLabelText("Stok tepung terigu (g)");
+    await userEvent.clear(stock);
+    await userEvent.type(stock, "9000");
+    await userEvent.click(screen.getByRole("button", { name: "Simpan Perubahan" }));
+    expect(notify.success).toHaveBeenCalledWith("Parameter disimpan untuk sesi demo ini.");
+  });
+
+  it("notifies on reset, and on scenario add and delete", async () => {
+    await renderPage("demo", "data");
+    await userEvent.click(screen.getByRole("button", { name: "Reset Demo" }));
+    await userEvent.click(screen.getByRole("button", { name: "Ya, Reset" }));
+    await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Data dikembalikan ke kondisi awal Dapur Sari."));
+
+    await go("simulator");
+    await userEvent.click(screen.getByRole("button", { name: "Tambah Skenario" }));
+    expect(notify.success).toHaveBeenCalledWith(expect.stringMatching(/Skenario "Skenario 1" ditambahkan/));
+    await userEvent.click(screen.getByRole("button", { name: "Hapus Skenario" }));
+    expect(notify.success).toHaveBeenCalledWith('Skenario "Skenario 1" dihapus.');
+  });
+
+  it("notifies on workspace save success and on save failure", async () => {
+    await renderPage("workspace", "data");
+    const name = screen.getByLabelText("Nama usaha");
+    await userEvent.clear(name);
+    await userEvent.type(name, "Toko Maju");
+    await userEvent.click(screen.getByRole("button", { name: /Simpan ke Workspace/ }));
+    await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Perubahan tersimpan di workspace Anda."));
+
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) =>
+      url === "/api/workspace" && init?.method === "PUT" ? json({ error: "Data workspace tidak valid dan tidak dapat disimpan." }, 400) : handler(url, init),
+    ));
+    await userEvent.type(screen.getByLabelText("Nama usaha"), "!");
+    await userEvent.click(screen.getByRole("button", { name: /Simpan ke Workspace/ }));
+    await waitFor(() => expect(notify.error).toHaveBeenCalledWith("Data workspace tidak valid dan tidak dapat disimpan."));
+  });
+
+  it("notifies when the simulation request fails", async () => {
+    await renderPage("demo", "simulator");
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => (url === "/api/simulate" ? json({ error: "Data tidak valid." }, 400) : handler(url))));
+    await userEvent.click(screen.getByRole("button", { name: "Jalankan Simulasi" }));
+    await waitFor(() => expect(notify.error).toHaveBeenCalledWith("Data tidak valid."));
   });
 });

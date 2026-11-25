@@ -74,3 +74,7 @@ Kembali ke [[MicroChain Hub]] | Lihat [[docs/PRD|PRD]] | Lihat [[docs/superpower
 - Pengguna login TIDAK lagi mendapat salinan Dapur Sari: RPC ensure_workspace membuat workspace kosong (Usaha Saya, 3 skenario inti, slug usaha). ensure_demo_workspace dihapus. Dapur Sari hanya untuk mode tamu (demo_templates).
 - Tombol workspace: Reset menjadi Kosongkan Data (dengan konfirmasi). Dashboard menampilkan panel Mulai dari nol bila workspace kosong.
 - Salinan Dapur Sari lama di akun uji dihapus; diverifikasi dengan JWT akun: 0 pemasok/bahan/produk, 3 skenario, ensure_workspace idempoten.
+
+## Notifikasi dan UI mobile (2026-11-25)
+- Notifikasi toast (sonner 2.0.8, lib/notify.ts, components/toaster.tsx) untuk tiap aksi CRUD: tambah/hapus pemasok, bahan, produk, pengiriman, penawaran, skenario (langsung); ubah isian digabung (debounce 700 ms); terapkan parameter, simpan workspace, reset/kosongkan, galat simulasi/simpan/perbandingan, keluar, ubah kata sandi.
+- Mobile: navigasi tab di bawah (fixed, safe-area), bilah atas lengket dengan tombol Simpan/Keluar ringkas, toast naik di atas navigasi, panel Data Usaha berupa akordeon dengan jumlah item (tertutup di ponsel), panel Mulai dari nol berisi 3 langkah, input 16px agar tidak zoom di iOS.

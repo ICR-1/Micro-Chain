@@ -4,6 +4,7 @@ import { Building2, ChartNoAxesColumnIncreasing, Database, FlaskConical, LayoutG
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import { notify } from "@/lib/notify";
 import { createClient } from "@/lib/supabase/client";
 import { WorkspaceGate, WorkspaceProvider, useWorkspaceMeta, type Mode } from "@/lib/workspace-context";
 import { Brand } from "./brand";
@@ -28,6 +29,7 @@ function Shell({ children }: { children: ReactNode }) {
   async function logout() {
     try {
       await createClient().auth.signOut();
+      notify.info("Anda sudah keluar.");
     } finally {
       router.replace("/");
     }
@@ -61,8 +63,8 @@ function Shell({ children }: { children: ReactNode }) {
             <span className="workspace-mode"><FlaskConical size={15} aria-hidden="true" /> {isWorkspace ? (dirty ? "Belum disimpan" : "Tersimpan") : "Data simulasi"}</span>
             {isWorkspace && (
               <>
-                <Button type="button" size="sm" onClick={save} disabled={!dirty || saving}><Save size={15} aria-hidden="true" /> Simpan ke Workspace</Button>
-                <Button type="button" size="sm" variant="ghost" onClick={logout}><LogOut size={15} aria-hidden="true" /> Keluar</Button>
+                <Button type="button" size="sm" onClick={save} disabled={!dirty || saving} aria-label="Simpan ke Workspace"><Save size={15} aria-hidden="true" /> <span className="label-full">Simpan ke Workspace</span><span className="label-short" aria-hidden="true">{saving ? "Menyimpan" : "Simpan"}</span></Button>
+                <Button type="button" size="sm" variant="ghost" onClick={logout} aria-label="Keluar"><LogOut size={15} aria-hidden="true" /> <span className="label-full">Keluar</span></Button>
               </>
             )}
           </div>

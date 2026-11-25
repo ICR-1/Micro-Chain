@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { notify } from "@/lib/notify";
 import { createClient } from "@/lib/supabase/client";
 
 const MIN_PASSWORD = 8;
@@ -61,6 +62,7 @@ export default function ResetPasswordForm() {
       );
       return;
     }
+    notify.success("Kata sandi berhasil diubah.");
     router.replace("/workspace");
     router.refresh();
   }

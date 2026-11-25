@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CircleAlert, RotateCcw, Save } from "lucide-react";
 import { PageHeader } from "@/components/workspace";
 import { Button } from "@/components/ui/button";
+import { notify } from "@/lib/notify";
 import { useWorkspace } from "@/lib/workspace-context";
 import { ParameterForm } from "./parameter-form";
 import { StructureEditor } from "./structure-editor";
@@ -35,6 +36,7 @@ export function DataEditor() {
           <ParameterForm key={resetVersion} snapshot={snapshot} onApply={(next) => {
             setData({ ...data, snapshot: next });
             setApplied(isDemo ? "Parameter disimpan untuk sesi demo ini." : "Parameter diterapkan. Tekan Simpan ke Workspace untuk menyimpannya.");
+            notify.success(isDemo ? "Parameter disimpan untuk sesi demo ini." : "Parameter diterapkan. Tekan Simpan ke Workspace untuk menyimpannya.");
           }}>
             {({ dirty }) => <div className="parameter-actions">
               <div className="form-notice" aria-live="polite">{dirty || unsimulated ? "Perubahan belum disimulasikan" : (notice ?? applied)}</div>

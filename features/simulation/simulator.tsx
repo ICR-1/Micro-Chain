@@ -12,6 +12,7 @@ import { addScenario, removeScenario, updateScenario } from "@/lib/domain/mutati
 import { computeInputsSignature } from "@/lib/domain/signature";
 import { CORE_SCENARIO_IDS, MAX_SCENARIOS, type WorkspaceSnapshot } from "@/lib/domain/types";
 import { formatDate } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import type { SimulationResult } from "@/lib/types";
 import { useWorkspace } from "@/lib/workspace-context";
 import { SimulationResults } from "./results";
@@ -49,7 +50,11 @@ export function Simulator() {
       const result = await previewScenario(next, scenario, request.signal);
       if (!request.signal.aborted) setCompleted({ signature, scenarioId: scenario.id, result });
     } catch (error) {
-      if (!request.signal.aborted) setCompleted({ signature, scenarioId: scenario.id, error: error instanceof Error ? error.message : "Simulasi gagal." });
+      if (!request.signal.aborted) {
+        const message = error instanceof Error ? error.message : "Simulasi gagal.";
+        setCompleted({ signature, scenarioId: scenario.id, error: message });
+        notify.error(message);
+      }
     } finally {
       if (!request.signal.aborted) setPending(false);
     }
@@ -60,10 +65,12 @@ export function Simulator() {
     setData(next);
     selectScenario(next.scenarios.at(-1)?.id ?? scenario.id);
     setCompleted(undefined);
+    notify.success(`Skenario "${next.scenarios.at(-1)?.name ?? "baru"}" ditambahkan sebagai salinan "${scenario.name}".`);
   }
 
   function removeCurrent() {
     setData(removeScenario(data, scenario.id));
+    notify.success(`Skenario "${scenario.name}" dihapus.`);
     selectScenario("baseline");
     setCompleted(undefined);
   }
@@ -81,7 +88,7 @@ export function Simulator() {
             <Button type="button" variant="outline" size="sm" onClick={addCustom} disabled={pending || scenarios.length >= MAX_SCENARIOS}><Plus size={16} aria-hidden="true" /> Tambah Skenario</Button>
             {!isCore && <Button type="button" variant="ghost" size="sm" onClick={removeCurrent} disabled={pending}><Trash2 size={16} aria-hidden="true" /> Hapus Skenario</Button>}
           </div>
-          <ScenarioSettings snapshot={snapshot} scenario={scenario} pending={pending} onChange={(next) => setData(updateScenario(data, next))} />
+          <ScenarioSettings snapshot={snapshot} scenario={scenario} pending={pending} onChange={(next) => { setData(updateScenario(data, next)); notify.changed("Pengaturan skenario diperbarui.", "scenario-updated"); }} />
           <ParameterForm snapshot={snapshot} onApply={run} pending={pending} compact>
             {({ dirty }) => <>
               <div className="simulator-actions">

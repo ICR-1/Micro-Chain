@@ -31,8 +31,13 @@ export function Dashboard() {
       {isEmpty && (
         <section className="guide-panel start-panel">
           <div className="guide-icon"><Boxes size={23} aria-hidden="true" /></div>
-          <div><h2>Mulai dari nol</h2><p>Workspace ini masih kosong. Tambahkan pemasok, bahan baku, produk, dan resep di Data Usaha, lalu jalankan simulasi.</p></div>
+          <div><h2>Mulai dari nol</h2><p>Workspace ini masih kosong. Ikuti tiga langkah singkat ini.</p></div>
           <Button asChild><Link href={href("/data")}>Isi Data Usaha</Link></Button>
+          <ol className="start-steps">
+            <li>Tambahkan pemasok, bahan baku, dan produk di <Link href={href("/data")} className="text-link">Data Usaha</Link>.</li>
+            <li>Isi resep, stok, permintaan, dan pengiriman atau penawaran pemasok.</li>
+            <li>Jalankan <Link href={href("/simulator")} className="text-link">Simulator</Link>, lalu lihat <Link href={href("/comparison")} className="text-link">Perbandingan</Link>.</li>
+          </ol>
         </section>
       )}
       <div className="dashboard-grid">
