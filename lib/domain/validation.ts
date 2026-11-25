@@ -126,12 +126,14 @@ const snapshotSchema = z.object({
   demo_data: z.boolean(),
 });
 
-export const workspaceDataSchema = z
-  .object({
-    snapshot: snapshotSchema,
-    scenarios: z.array(scenarioSchema).max(MAX_SCENARIOS, `Maksimal ${MAX_SCENARIOS} skenario.`),
-  })
-  .superRefine((data, ctx) => {
+const workspaceShape = z.object({
+  snapshot: snapshotSchema,
+  scenarios: z.array(scenarioSchema).max(MAX_SCENARIOS, `Maksimal ${MAX_SCENARIOS} skenario.`),
+});
+
+const crossCheck =
+  (requireCore: boolean) =>
+  (data: z.infer<typeof workspaceShape>, ctx: z.RefinementCtx) => {
     const { snapshot: s, scenarios } = data;
     const issue = (path: (string | number)[], message: string) =>
       ctx.addIssue({ code: "custom", path, message });
@@ -175,8 +177,10 @@ export const workspaceDataSchema = z
 
     const scenarioIds = scenarios.map((x) => x.id);
     unique("scenarios", scenarioIds);
-    for (const core of CORE_SCENARIO_IDS) {
-      if (!scenarioIds.includes(core)) issue(["scenarios"], `Skenario inti "${core}" wajib ada.`);
+    if (requireCore) {
+      for (const core of CORE_SCENARIO_IDS) {
+        if (!scenarioIds.includes(core)) issue(["scenarios"], `Skenario inti "${core}" wajib ada.`);
+      }
     }
 
     scenarios.forEach((sc, i) => {
@@ -196,7 +200,12 @@ export const workspaceDataSchema = z
         if (!productIds.has(id)) issue(["scenarios", i, "overrides", "demand_by_product", id], `Produk "${id}" tidak ditemukan.`);
       });
     });
-  });
+  };
+
+/** Skema workspace lengkap: wajib memuat 3 skenario inti. */
+export const workspaceDataSchema = workspaceShape.superRefine(crossCheck(true));
+/** Skema masukan simulasi: seluruh aturan yang sama, tetapi skenario inti tidak diwajibkan. */
+const simulationInputSchema = workspaceShape.superRefine(crossCheck(false));
 
 export class WorkspaceValidationError extends Error {
   readonly issues: { path: string; message: string }[];
@@ -207,13 +216,22 @@ export class WorkspaceValidationError extends Error {
   }
 }
 
-/** Validasi + normalisasi `WorkspaceData`; melempar `WorkspaceValidationError` berpesan Indonesia. */
-export function validateWorkspaceData(input: unknown): WorkspaceData {
-  const result = workspaceDataSchema.safeParse(input);
+function parseWith(schema: typeof workspaceDataSchema, input: unknown): WorkspaceData {
+  const result = schema.safeParse(input);
   if (!result.success) {
     throw new WorkspaceValidationError(
       result.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
     );
   }
   return result.data as WorkspaceData;
+}
+
+/** Validasi + normalisasi `WorkspaceData`; melempar `WorkspaceValidationError` berpesan Indonesia. */
+export function validateWorkspaceData(input: unknown): WorkspaceData {
+  return parseWith(workspaceDataSchema, input);
+}
+
+/** Validasi masukan solver: snapshot + skenario apa pun (tanpa kewajiban 3 skenario inti). */
+export function validateSimulationInput(input: unknown): WorkspaceData {
+  return parseWith(simulationInputSchema, input);
 }
