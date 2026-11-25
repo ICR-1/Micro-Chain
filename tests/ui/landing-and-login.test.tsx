@@ -4,9 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const signInWithOtp = vi.fn();
-vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ auth: { signInWithOtp } }) }));
+const signInWithPassword = vi.fn();
+const signUp = vi.fn();
+const replace = vi.fn();
+vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ auth: { signInWithOtp, signInWithPassword, signUp } }) }));
 let searchError: string | null = null;
 vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace, refresh: vi.fn() }),
   useSearchParams: () => ({ get: (key: string) => (key === "error" ? searchError : null) }),
 }));
 vi.mock("next/image", () => ({
@@ -21,6 +25,9 @@ import { formatDate, formatMoney, formatNumber, formatPercent, formatQuantity } 
 
 beforeEach(() => {
   signInWithOtp.mockReset();
+  signInWithPassword.mockReset();
+  signUp.mockReset();
+  replace.mockReset();
   searchError = null;
 });
 afterEach(cleanup);
@@ -59,35 +66,85 @@ describe("LoginPage and LoginForm", () => {
     expect(screen.getByRole("link", { name: "Buka demo tanpa masuk" })).toHaveAttribute("href", "/dashboard");
   });
 
-  it("sends a magic link and confirms in Indonesian", async () => {
+  it("defaults to password login and goes to the workspace on success", async () => {
+    signInWithPassword.mockResolvedValue({ error: null });
+    render(<LoginForm />);
+    expect(screen.getByRole("button", { name: /Kata sandi/ })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.type(screen.getByLabelText("Email"), "pemilik@dapur.id");
+    await userEvent.type(screen.getByLabelText("Kata sandi"), "rahasia123");
+    await userEvent.click(screen.getByRole("button", { name: "Masuk" }));
+    await waitFor(() => expect(signInWithPassword).toHaveBeenCalledWith({ email: "pemilik@dapur.id", password: "rahasia123" }));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/workspace"));
+  });
+
+  it("shows Indonesian errors for wrong credentials and rate limits without leaking provider text", async () => {
+    signInWithPassword.mockResolvedValue({ error: { code: "invalid_credentials", message: "Invalid login credentials" } });
+    render(<LoginForm />);
+    await userEvent.type(screen.getByLabelText("Email"), "pemilik@dapur.id");
+    await userEvent.type(screen.getByLabelText("Kata sandi"), "salah");
+    await userEvent.click(screen.getByRole("button", { name: "Masuk" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Email atau kata sandi salah.");
+    expect(replace).not.toHaveBeenCalled();
+
+    signInWithPassword.mockResolvedValue({ error: { code: "over_email_send_rate_limit", status: 429, message: "email rate limit exceeded" } });
+    await userEvent.click(screen.getByRole("button", { name: "Masuk" }));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toMatch(/Batas pengiriman email/));
+    expect(screen.getByRole("alert").textContent).not.toMatch(/exceeded/);
+  });
+
+  it("validates the email and password before calling Supabase", async () => {
+    render(<LoginForm />);
+    await userEvent.click(screen.getByRole("button", { name: "Masuk" }));
+    expect(screen.getByRole("alert").textContent).toMatch(/email yang valid/);
+    await userEvent.type(screen.getByLabelText("Email"), "pemilik@dapur.id");
+    await userEvent.click(screen.getByRole("button", { name: "Masuk" }));
+    expect(screen.getByRole("alert").textContent).toMatch(/Masukkan kata sandi/);
+    await userEvent.type(screen.getByLabelText("Kata sandi"), "pendek");
+    await userEvent.click(screen.getByRole("button", { name: "Daftar Akun Baru" }));
+    expect(screen.getByRole("alert").textContent).toMatch(/minimal 8 karakter/);
+    expect(signInWithPassword).not.toHaveBeenCalled();
+    expect(signUp).not.toHaveBeenCalled();
+  });
+
+  it("signs up: goes straight in when no confirmation is required, otherwise asks to check email", async () => {
+    signUp.mockResolvedValue({ data: { session: { access_token: "x" } }, error: null });
+    const { unmount } = render(<LoginForm />);
+    await userEvent.type(screen.getByLabelText("Email"), "baru@dapur.id");
+    await userEvent.type(screen.getByLabelText("Kata sandi"), "rahasia123");
+    await userEvent.click(screen.getByRole("button", { name: "Daftar Akun Baru" }));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/workspace"));
+    expect(signUp.mock.calls[0][0].options.emailRedirectTo).toMatch(/\/auth\/callback$/);
+    unmount();
+
+    signUp.mockResolvedValue({ data: { session: null }, error: null });
+    render(<LoginForm />);
+    await userEvent.type(screen.getByLabelText("Email"), "baru@dapur.id");
+    await userEvent.type(screen.getByLabelText("Kata sandi"), "rahasia123");
+    await userEvent.click(screen.getByRole("button", { name: "Daftar Akun Baru" }));
+    expect(await screen.findByText(/Cek email Anda/)).toBeInTheDocument();
+  });
+
+  it("sends a magic link from the email-link tab and confirms in Indonesian", async () => {
     signInWithOtp.mockResolvedValue({ error: null });
     render(<LoginForm />);
+    await userEvent.click(screen.getByRole("button", { name: /Tautan email/ }));
+    expect(screen.queryByLabelText("Kata sandi")).not.toBeInTheDocument();
     await userEvent.type(screen.getByLabelText("Email"), "pemilik@dapur.id");
     await userEvent.click(screen.getByRole("button", { name: "Kirim Tautan Masuk" }));
     await waitFor(() => expect(signInWithOtp).toHaveBeenCalledTimes(1));
     expect(signInWithOtp.mock.calls[0][0].email).toBe("pemilik@dapur.id");
-    expect(signInWithOtp.mock.calls[0][0].options.emailRedirectTo).toMatch(/\/auth\/callback$/);
     expect(await screen.findByText(/Cek email Anda/i)).toBeInTheDocument();
   });
 
-  it("shows a friendly error without leaking provider details", async () => {
-    signInWithOtp.mockResolvedValue({ error: { message: "rate limit exceeded" } });
+  it("shows a friendly rate-limit message for the magic link", async () => {
+    signInWithOtp.mockResolvedValue({ error: { code: "over_email_send_rate_limit", status: 429, message: "rate limit exceeded" } });
     render(<LoginForm />);
+    await userEvent.click(screen.getByRole("button", { name: /Tautan email/ }));
     await userEvent.type(screen.getByLabelText("Email"), "pemilik@dapur.id");
     await userEvent.click(screen.getByRole("button", { name: "Kirim Tautan Masuk" }));
     const alert = await screen.findByRole("alert");
-    expect(alert.textContent).toMatch(/gagal/i);
-    expect(alert.textContent).not.toMatch(/rate limit/);
-  });
-
-  it("does not submit an empty or malformed email", async () => {
-    render(<LoginForm />);
-    await userEvent.click(screen.getByRole("button", { name: "Kirim Tautan Masuk" }));
-    expect(signInWithOtp).not.toHaveBeenCalled();
-    await userEvent.type(screen.getByLabelText("Email"), "bukan-email");
-    await userEvent.click(screen.getByRole("button", { name: "Kirim Tautan Masuk" }));
-    expect(signInWithOtp).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(alert.textContent).toMatch(/masuk dengan kata sandi/);
+    expect(alert.textContent).not.toMatch(/rate limit exceeded/);
   });
 
   it("explains a failed callback from the ?error query", () => {

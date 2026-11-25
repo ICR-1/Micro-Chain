@@ -459,3 +459,6 @@ select { appearance: auto; padding-right: 22px; }
   .entity-row, .entity-row-wide, .entity-fields { grid-template-columns: minmax(0, 1fr); }
   .entity-check { padding-top: 0; }
 }
+.login-method { justify-self: start; }
+.login-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.login-actions .button { flex: 1 1 140px; }

@@ -66,3 +66,5 @@ Kembali ke [[MicroChain Hub]] | Lihat [[docs/PRD|PRD]] | Lihat [[docs/superpower
 - Galat HMR ws://192.168.56.1: diperbaiki dengan allowedDevOrigins di next.config.ts (perlu restart server dev).
 - proxy.ts meneruskan ?code= di / ke /auth/callback bila Redirect URL belum didaftarkan di Supabase.
 - Buka aplikasi lewat http://localhost:3000 (bukan IP jaringan) saat login: verifier PKCE tersimpan per origin.
+
+- Login kata sandi ditambahkan di /login (default) + Daftar Akun Baru; Magic Link tetap sebagai tab kedua. Diverifikasi di Supabase asli: sandi benar 200, salah invalid_credentials. Catatan: mailer_autoconfirm=false, jadi Daftar Akun Baru dan Magic Link sama-sama mengirim email (batas bawaan kecil); akun tanpa email dibuat lewat Admin API.
