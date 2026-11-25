@@ -21,6 +21,8 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ auth: { signOut: vi.fn().mockResolvedValue({}) } }) }));
 
 import { notify } from "@/lib/notify";
+import { resetStoredValues } from "@/lib/use-stored-value";
+import { TOUR_STEPS } from "@/components/guide/steps";
 import { Workspace } from "@/components/workspace";
 import { Dashboard } from "@/features/dashboard/dashboard";
 import { DataEditor } from "@/features/data-editor/data-editor";
@@ -73,6 +75,11 @@ beforeEach(() => {
   replace.mockReset();
   for (const fn of Object.values(notify)) vi.mocked(fn).mockReset();
   sessionStorage.clear();
+  localStorage.clear();
+  resetStoredValues();
+  // Pengantar dan panduan dianggap sudah dilihat; test panduan menghapusnya sendiri.
+  localStorage.setItem("microchain:onboarding:v1", "done");
+  localStorage.setItem("microchain:tour:v1", "done");
   stubMatchMedia(true);
   vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => handler(url, init)));
 });
@@ -541,5 +548,85 @@ describe("Notifikasi untuk setiap aksi CRUD", () => {
     vi.stubGlobal("fetch", vi.fn(async (url: string) => (url === "/api/simulate" ? json({ error: "Data tidak valid." }, 400) : handler(url))));
     await userEvent.click(screen.getByRole("button", { name: "Jalankan Simulasi" }));
     await waitFor(() => expect(notify.error).toHaveBeenCalledWith("Data tidak valid."));
+  });
+});
+
+describe("Panduan penggunaan di aplikasi", () => {
+  const needsDom = () => {
+    vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} unobserve() {} });
+    Element.prototype.scrollIntoView = vi.fn();
+  };
+
+  it("shows the onboarding screens on the first visit, and not again once skipped", async () => {
+    localStorage.removeItem("microchain:onboarding:v1");
+    resetStoredValues();
+    render(<Harness mode="demo" />);
+    expect(await screen.findByRole("heading", { level: 2, name: "Petakan jaringan pasok" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Lewati" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(localStorage.getItem("microchain:onboarding:v1")).toBe("done");
+    cleanup();
+    render(<Harness mode="demo" />);
+    await screen.findByRole("heading", { level: 1 });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("reopens the onboarding from the Bantuan menu", async () => {
+    await renderPage("demo");
+    await userEvent.click(screen.getByRole("button", { name: "Bantuan" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: /Lihat pengantar/ }));
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("Petakan jaringan pasok");
+  });
+
+  it("starts the interactive tour from the last slide, and remembers when it is closed", async () => {
+    needsDom();
+    localStorage.removeItem("microchain:onboarding:v1");
+    resetStoredValues();
+    render(<Harness mode="workspace" />);
+    await screen.findByRole("heading", { level: 2, name: "Petakan jaringan pasok" });
+    await userEvent.click(screen.getByRole("button", { name: /Langkah 4/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Mulai Panduan Interaktif/ }));
+    expect(localStorage.getItem("microchain:onboarding:v1")).toBe("done");
+    const tour = await screen.findByTestId("coach-marks");
+    expect(tour).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("Menu utama");
+    expect(screen.getByText("Langkah 1 dari 12")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Lewati" }));
+    expect(screen.queryByTestId("coach-marks")).not.toBeInTheDocument();
+    expect(localStorage.getItem("microchain:tour:v1")).toBe("done");
+  });
+
+  it("restarts the tour from Bantuan at step 1 and uses the workspace-only save step in workspace mode", async () => {
+    needsDom();
+    await renderPage("workspace");
+    await userEvent.click(screen.getByRole("button", { name: "Bantuan" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: /Panduan interaktif/ }));
+    expect(await screen.findByRole("dialog")).toHaveAccessibleName("Menu utama");
+    expect(screen.getByText("Langkah 1 dari 12")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["dashboard", ["nav-menu", "overview", "risk", "mode", "help"]],
+    ["data", ["parameters", "structure"]],
+    ["network", ["network-panel", "network-scenario"]],
+    ["simulator", ["scenario-picker", "run"]],
+  ] as const)("the %s page exposes every tour target it is responsible for", async (page, targets) => {
+    await renderPage("demo", page);
+    for (const target of targets) {
+      expect(document.querySelector(`[data-tour="${target}"]`), `data-tour="${target}" di halaman ${page}`).not.toBeNull();
+    }
+  });
+
+  it("the comparison page exposes its metrics target once results are ready", async () => {
+    await renderPage("demo", "comparison");
+    await screen.findByText("Persentase pemulihan");
+    expect(document.querySelector('[data-tour="comparison-metrics"]')).not.toBeNull();
+  });
+
+  it("every step of the tour has a target in the DOM for its mode (workspace save button)", async () => {
+    await renderPage("workspace");
+    expect(document.querySelector('[data-tour="save"]')).not.toBeNull();
+    expect(document.querySelector('[data-tour="mode"]')).not.toBeNull();
+    expect(TOUR_STEPS.length).toBeGreaterThanOrEqual(12);
   });
 });

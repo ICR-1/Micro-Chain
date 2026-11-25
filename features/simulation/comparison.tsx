@@ -21,7 +21,7 @@ function ComparisonDetails({ outcome }: { outcome: ComparisonResult }) {
   const bars = outcome.results.map((item) => ({ label: lookup.get(item.scenario_id) ?? item.scenario_name, contribution: item.kpis?.net_contribution_idr ?? null }));
   return (
     <>
-      <div className="metric-panel comparison-metrics">
+      <div className="metric-panel comparison-metrics" data-tour="comparison-metrics">
         <div><span>Kontribusi yang berisiko hilang</span><strong>{formatMoney(outcome.contribution_at_risk_idr)}</strong></div>
         <div><span>Kontribusi yang dipulihkan</span><strong>{formatMoney(outcome.recovered_contribution_idr)}</strong></div>
         <div className="metric-emphasis"><span>Persentase pemulihan</span><strong>{formatPercent(outcome.recovery_pct)}</strong></div>

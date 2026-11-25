@@ -540,3 +540,66 @@ select { appearance: auto; padding-right: 22px; }
   .mobile-brand .brand { font-size: 17px; }
   .mobile-brand .brand-mark { width: 32px; height: 32px; }
 }
+
+/* ==========================================================================
+   Onboarding (layar pengantar), coach marks (panduan interaktif), menu Bantuan
+   ========================================================================== */
+.onboard-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgba(15, 35, 28, .56); backdrop-filter: blur(3px); animation: onboard-fade .25s ease; }
+.onboard { display: grid; grid-template-columns: 1.1fr 1fr; width: min(920px, 100%); max-height: calc(100dvh - 40px); overflow: hidden; border-radius: 22px; background: #f7f7f0; box-shadow: 0 24px 60px #0f231c55; animation: onboard-pop .32s cubic-bezier(.2, .8, .2, 1); }
+.onboard-media { position: relative; min-height: 340px; overflow: hidden; background: #e9f0e6; touch-action: pan-y; }
+.onboard-track { display: flex; height: 100%; transition: transform .4s cubic-bezier(.4, 0, .2, 1); }
+.onboard-frame { flex: 0 0 100%; height: 100%; }
+.onboard-image { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-drag: none; }
+.onboard-fallback { display: grid; width: 100%; height: 100%; min-height: 280px; place-items: center; color: var(--accent); background: linear-gradient(135deg, #e5efe6, #f7f7f0); }
+.onboard-body { display: flex; flex-direction: column; gap: 16px; padding: clamp(22px, 3vw, 38px); overflow-y: auto; }
+.onboard-step { margin: 0; color: var(--muted); font-size: 12px; font-weight: 800; }
+.onboard-copy { flex: 1; animation: onboard-copy-in .38s ease; }
+.onboard-copy h2 { margin: 0 0 12px; color: var(--deep); font-family: "Instrument Serif", Georgia, serif; font-size: clamp(32px, 3.6vw, 44px); font-weight: 400; line-height: 1.04; letter-spacing: -.02em; outline: none; }
+.onboard-copy p { margin: 0; color: #42594e; font-size: 15px; line-height: 1.65; }
+.onboard-dots { display: flex; gap: 8px; }
+.onboard-dot { position: relative; width: 9px; height: 9px; min-height: 0; padding: 0; border: 0; border-radius: 999px; background: #c3d4c8; transition: width .25s, background .25s; }
+.onboard-dot::before { content: ""; position: absolute; inset: -12px -4px; }
+.onboard-dot[aria-current="step"] { width: 28px; background: var(--deep); }
+.onboard-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.onboard-nav { display: flex; gap: 8px; }
+@keyframes onboard-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes onboard-pop { from { opacity: 0; translate: 0 14px; scale: .98; } to { opacity: 1; translate: 0 0; scale: 1; } }
+@keyframes onboard-copy-in { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
+
+.tour { position: fixed; inset: 0; z-index: 110; pointer-events: none; }
+.tour-shield { position: fixed; inset: 0; pointer-events: auto; background: transparent; }
+.tour-shield.is-dim { background: rgba(15, 35, 28, .62); }
+.tour-spot { position: fixed; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(15, 35, 28, .62); pointer-events: none; transition: top .38s cubic-bezier(.4, 0, .2, 1), left .38s cubic-bezier(.4, 0, .2, 1), width .38s cubic-bezier(.4, 0, .2, 1), height .38s cubic-bezier(.4, 0, .2, 1); }
+.tour-spot::after { content: ""; position: absolute; inset: -4px; border: 2px solid #fff; border-radius: 18px; animation: tour-pulse 1.8s ease-out infinite; }
+.tour-card { position: fixed; z-index: 2; width: min(340px, calc(100vw - 24px)); padding: 14px 16px 14px; border-radius: 16px; background: #fffffb; box-shadow: 0 16px 40px #0f231c66; pointer-events: auto; transition: top .38s cubic-bezier(.4, 0, .2, 1), left .38s cubic-bezier(.4, 0, .2, 1); }
+.tour-card-body { animation: tour-card-in .3s ease; }
+.tour-progress { height: 4px; margin-bottom: 12px; overflow: hidden; border-radius: 4px; background: #e3ebe4; }
+.tour-progress span { display: block; height: 100%; border-radius: 4px; background: var(--green); transition: width .35s ease; }
+.tour-count { margin: 0 0 4px; color: var(--muted); font-size: 12px; font-weight: 800; }
+.tour-card h2 { margin: 0 0 6px; font-size: 17px; font-weight: 850; letter-spacing: -.025em; outline: none; }
+.tour-card p:not(.tour-count) { margin: 0; color: #3d5448; font-size: 14px; line-height: 1.55; }
+.tour-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 14px; }
+.tour-nav { display: flex; gap: 8px; }
+@keyframes tour-pulse { 0% { scale: 1; opacity: .95; } 100% { scale: 1.07; opacity: 0; } }
+@keyframes tour-card-in { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
+
+.help { position: relative; }
+.help-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; width: 290px; padding: 6px; border: 1px solid var(--rule); border-radius: 12px; background: var(--surface); box-shadow: 0 12px 30px #173f3224; animation: tour-card-in .18s ease; }
+.help-menu button { display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 10px; border: 0; border-radius: 8px; background: none; color: var(--ink); text-align: left; }
+.help-menu button:hover { background: #f0f5ef; }
+.help-menu button svg { margin-top: 2px; color: var(--accent); flex: none; }
+.help-menu strong { display: block; font-size: 14px; font-weight: 800; }
+.help-menu small { display: block; margin-top: 1px; color: var(--muted); font-size: 12px; }
+
+@media (max-width: 680px) {
+  .onboard-backdrop { place-items: end center; padding: 0; }
+  .onboard { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); max-height: 94dvh; border-radius: 22px 22px 0 0; }
+  .onboard-media { min-height: 0; aspect-ratio: 4 / 3; max-height: 36dvh; }
+  .onboard-body { gap: 12px; padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); }
+  .onboard-copy h2 { font-size: 30px; }
+  .onboard-actions { flex-direction: column-reverse; align-items: stretch; }
+  .onboard-actions > .button { width: 100%; }
+  .onboard-nav { width: 100%; }
+  .onboard-nav .button:last-child { flex: 1; }
+  .help-menu { right: -4px; width: min(290px, calc(100vw - 24px)); }
+}

@@ -76,10 +76,10 @@ export function SupplyNetwork() {
   return (
     <>
       <PageHeader title="Jaringan Pasok" action={
-        <label className="network-scenario"><span>Skenario jaringan</span><select value={scenario.id} onChange={(event) => selectScenario(event.target.value)}>{scenarios.map((entry) => <option key={entry.id} value={entry.id}>{scenarioLabel(entry)}</option>)}</select></label>
+        <label className="network-scenario" data-tour="network-scenario"><span>Skenario jaringan</span><select value={scenario.id} onChange={(event) => selectScenario(event.target.value)}>{scenarios.map((entry) => <option key={entry.id} value={entry.id}>{scenarioLabel(entry)}</option>)}</select></label>
       }>Telusuri hubungan pemasok, bahan baku, dan produk yang bergantung padanya.</PageHeader>
       <div className="network-grid">
-        <section className="panel network-panel">
+        <section className="panel network-panel" data-tour="network-panel">
           <header className="panel-heading network-heading">
             <div className="network-filters">
               <label className="search-field"><Search size={17} aria-hidden="true" /><span className="sr-only">Cari node</span><Input type="search" placeholder="Cari pemasok, bahan, produk…" value={query} onChange={(event) => setQuery(event.target.value)} /></label>

@@ -70,7 +70,7 @@ export function StructureEditor({ data, onChange }: Props) {
         </div>
       </Panel>
 
-      <Panel title="Pemasok" count={s.suppliers.length} description="Pemasok yang dinonaktifkan tidak dihitung di semua skenario." open={openByDefault}>
+      <Panel title="Pemasok" tour="structure" count={s.suppliers.length} description="Pemasok yang dinonaktifkan tidak dihitung di semua skenario." open={openByDefault}>
         <ul className="entity-list">
           {s.suppliers.map((sup, i) => (
             <li key={sup.id} className="entity-row">
@@ -225,10 +225,10 @@ export function StructureEditor({ data, onChange }: Props) {
 }
 
 /** Panel akordeon: judul, jumlah item, dan chevron. Isi tetap ada di DOM saat tertutup. */
-function Panel({ title, description, count, open: initiallyOpen, children }: { title: string; description: string; count?: number; open: boolean; children: ReactNode }) {
+function Panel({ title, description, count, tour, open: initiallyOpen, children }: { title: string; description: string; count?: number; tour?: string; open: boolean; children: ReactNode }) {
   const [open, setOpen] = useState(initiallyOpen);
   return (
-    <details className="panel structure-panel" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
+    <details className="panel structure-panel" data-tour={tour} open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
       <summary className="panel-heading">
         <div>
           <h2>{title}{count !== undefined && <span className="count-badge">{count}</span>}</h2>

@@ -22,7 +22,7 @@ export function Dashboard() {
       <PageHeader title="Ringkasan Usaha" action={<Button asChild><Link href={href("/simulator")}><FlaskConical size={18} aria-hidden="true" /> Buka Simulator</Link></Button>}>
         Pantau bahan baku dan ketergantungan pemasok {name}.
       </PageHeader>
-      <section className="overview-band" aria-label={`Ringkasan ${name}`}>
+      <section className="overview-band" data-tour="overview" aria-label={`Ringkasan ${name}`}>
         <div className="overview-business"><span className="overview-icon"><Building2 size={24} aria-hidden="true" /></span><div><h2>{name}</h2><p>{snapshot.business.sector}</p></div></div>
         <div className="overview-stat"><span>Pemasok</span><strong>{formatNumber(snapshot.suppliers.length)}</strong></div>
         <div className="overview-stat"><span>Bahan baku</span><strong>{formatNumber(snapshot.materials.length)}</strong></div>
@@ -51,7 +51,7 @@ export function Dashboard() {
           </div>
           <div className="panel-footer"><Link href={href("/data")} className="text-link">Ubah data usaha <ChevronRight size={17} aria-hidden="true" /></Link></div>
         </section>
-        <section className="panel">
+        <section className="panel" data-tour="risk">
           <header className="panel-heading"><div><h2>Risiko pemasok</h2><p>Berdasarkan kondisi normal pada {formatDate(baseline.cutoff_date)}.</p></div><Network size={21} aria-hidden="true" /></header>
           <div className="panel-body">
             {network.single_source_risks.length ? (

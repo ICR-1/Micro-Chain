@@ -83,7 +83,7 @@ export function Simulator() {
       <section className="panel simulator-controls" aria-label="Pengaturan simulasi">
         <header className="panel-heading"><div><h2>Pilih Skenario</h2><p>Atur kondisi pasokan untuk satu periode produksi.</p></div><span className="date-stamp"><CalendarDays size={16} aria-hidden="true" /> {formatDate(scenario.cutoff_date)}</span></header>
         <div className="panel-body">
-          <ScenarioPicker scenarios={scenarios} selected={scenario} onChange={(id) => { setCompleted(undefined); selectScenario(id); }} pending={pending} />
+          <div data-tour="scenario-picker"><ScenarioPicker scenarios={scenarios} selected={scenario} onChange={(id) => { setCompleted(undefined); selectScenario(id); }} pending={pending} /></div>
           <div className="scenario-actions">
             <Button type="button" variant="outline" size="sm" onClick={addCustom} disabled={pending || scenarios.length >= MAX_SCENARIOS}><Plus size={16} aria-hidden="true" /> Tambah Skenario</Button>
             {!isCore && <Button type="button" variant="ghost" size="sm" onClick={removeCurrent} disabled={pending}><Trash2 size={16} aria-hidden="true" /> Hapus Skenario</Button>}
@@ -93,7 +93,7 @@ export function Simulator() {
             {({ dirty }) => <>
               <div className="simulator-actions">
                 <div className="form-notice" aria-live="polite">{(dirty || stale) && "Perubahan belum disimulasikan"}</div>
-                <Button type="submit" disabled={pending}><Play size={17} aria-hidden="true" /> {pending ? "Menjalankan Simulasi…" : "Jalankan Simulasi"}</Button>
+                <Button type="submit" data-tour="run" disabled={pending}><Play size={17} aria-hidden="true" /> {pending ? "Menjalankan Simulasi…" : "Jalankan Simulasi"}</Button>
               </div>
               <div className="simulator-output" aria-live="polite">
                 {pending && <Busy label="Menghitung rencana produksi…" />}

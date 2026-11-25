@@ -30,7 +30,7 @@ export function DataEditor() {
       <PageHeader title="Data Usaha">
         {isDemo ? "Sesuaikan stok, permintaan, dan kapasitas pemasok pada sesi demo ini." : "Sesuaikan stok, permintaan, dan struktur usaha, lalu simpan ke workspace Anda."}
       </PageHeader>
-      <section className="panel">
+      <section className="panel" data-tour="parameters">
         <header className="panel-heading"><div><h2>Parameter {name}</h2><p>Masukkan jumlah dalam satuan yang tercantum pada setiap kolom.</p></div></header>
         <div className="panel-body">
           <ParameterForm key={resetVersion} snapshot={snapshot} onApply={(next) => {
