@@ -17,6 +17,8 @@ interface Props {
   results: ScenarioResult[] | null;
   isStale: boolean;
   running: boolean;
+  /** Tampilkan banner basi sendiri (default). Workspace menampilkannya secara global dan mematikan ini. */
+  showBanner?: boolean;
 }
 
 const STATUS_LABEL = { Optimal: "Optimal", Infeasible: "Tidak Layak", Error: "Galat" } as const;
@@ -40,7 +42,7 @@ export function StaleBanner({ onRun, running }: { onRun: () => void; running: bo
 }
 
 export default function SimulatorView({
-  snapshot, scenarios, selectedId, onSelect, onChange, onAdd, onRemove, onRun, results, isStale, running,
+  snapshot, scenarios, selectedId, onSelect, onChange, onAdd, onRemove, onRun, results, isStale, running, showBanner = true,
 }: Props) {
   const scenario = scenarios.find((s) => s.id === selectedId) ?? scenarios[0];
   const result = results?.find((r) => r.scenario_id === scenario.id);
@@ -66,7 +68,7 @@ export default function SimulatorView({
 
   return (
     <div className="space-y-5">
-      {isStale && <StaleBanner onRun={onRun} running={running} />}
+      {isStale && showBanner && <StaleBanner onRun={onRun} running={running} />}
 
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Pilih skenario">
         {scenarios.map((s) => (
