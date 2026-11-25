@@ -14,6 +14,6 @@ Perintah: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`.
 
 ## Database
 
-Terapkan `supabase/setup.sql` (gabungan semua migrasi, idempoten) lewat Supabase Dashboard > SQL Editor, atau `node scripts/apply-migrations.mjs` dengan `SUPABASE_PROJECT_REF` dan `SUPABASE_ACCESS_TOKEN` (personal access token). Di Authentication > URL Configuration, daftarkan `<origin>/auth/callback` sebagai Redirect URL.
+Terapkan `supabase/setup.sql` (gabungan semua migrasi, idempoten) lewat Supabase Dashboard > SQL Editor, atau `node scripts/apply-migrations.mjs` dengan `SUPABASE_PROJECT_REF` dan `SUPABASE_ACCESS_TOKEN` (personal access token `sbp_...` dari Account > Access Tokens; password database tidak bisa dipakai di sini). Di Authentication > URL Configuration, daftarkan `<origin>/auth/callback` sebagai Redirect URL.
 
 Rute: `/` landing, `/demo` mode tamu (tanpa login), `/login`, `/workspace` (perlu login). Dokumen desain ada di `docs/`.
