@@ -92,7 +92,7 @@ export function SupplyNetwork() {
           </header>
           {nodes.length ? activeView === "graph" ? <Graph key={nodes.map(({ id }) => id).join(",")} nodes={nodes} edges={edges} selected={activeNode?.id} onSelect={setSelected} />
             : <NodeList nodes={nodes} edges={allEdges} selected={activeNode?.id} onSelect={setSelected} />
-            : <div className="panel-body muted" role="status">Tidak ada node yang cocok. Coba ubah pencarian atau filter.</div>}
+            : <div className="panel-body muted" role="status">{allNodes.length === 0 ? "Belum ada pemasok, bahan, atau produk. Tambahkan di Data Usaha untuk melihat jaringan." : "Tidak ada node yang cocok. Coba ubah pencarian atau filter."}</div>}
           <div className="network-legend"><span><i className="legend-committed" />Pengiriman terjadwal</span><span><i className="legend-alternative" />Penawaran alternatif</span><span><i className="legend-bom" />Kebutuhan produksi</span><span><i className="legend-inactive" />Tidak aktif</span></div>
         </section>
         <NetworkDetail node={activeNode} edges={allEdges} allNodes={allNodes} />

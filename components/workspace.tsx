@@ -23,7 +23,7 @@ function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname().replace(/\/$/, "");
   const current = routes.find(({ path }) => `${base}${path}` === pathname);
   const isWorkspace = mode === "workspace";
-  const name = businessName?.replace(/\s*\(DATA SIMULASI\)\s*$/i, "") ?? "Dapur Sari";
+  const name = businessName?.replace(/\s*\(DATA SIMULASI\)\s*$/i, "") ?? (isWorkspace ? "Usaha Anda" : "Dapur Sari");
 
   async function logout() {
     try {

@@ -20,8 +20,8 @@ export default function LoginPage() {
         <section className="panel login-card" aria-labelledby="login-title">
           <header className="panel-heading">
             <div>
-              <h1 id="login-title">Masuk dengan email</h1>
-              <p>Kami kirim tautan sekali pakai, tanpa kata sandi. Workspace Dapur Sari Anda dibuat otomatis saat pertama masuk.</p>
+              <h1 id="login-title">Masuk ke workspace</h1>
+              <p>Masuk dengan email dan kata sandi. Workspace kosong milik Anda dibuat otomatis saat pertama masuk, siap diisi dengan data usaha Anda sendiri.</p>
             </div>
           </header>
           <div className="panel-body">

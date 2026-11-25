@@ -3,11 +3,14 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const signInWithOtp = vi.fn();
 const signInWithPassword = vi.fn();
 const signUp = vi.fn();
+const resetPasswordForEmail = vi.fn();
+const signInWithOtp = vi.fn();
 const replace = vi.fn();
-vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ auth: { signInWithOtp, signInWithPassword, signUp } }) }));
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({ auth: { signInWithPassword, signUp, resetPasswordForEmail, signInWithOtp } }),
+}));
 let searchError: string | null = null;
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace, refresh: vi.fn() }),
@@ -24,11 +27,9 @@ import LoginPage from "@/app/login/page";
 import { formatDate, formatMoney, formatNumber, formatPercent, formatQuantity } from "@/lib/format";
 
 beforeEach(() => {
-  signInWithOtp.mockReset();
-  signInWithPassword.mockReset();
-  signUp.mockReset();
-  replace.mockReset();
+  for (const fn of [signInWithPassword, signUp, resetPasswordForEmail, signInWithOtp, replace]) fn.mockReset();
   searchError = null;
+  document.cookie = "microchain-reset=; path=/; max-age=0";
 });
 afterEach(cleanup);
 
@@ -59,17 +60,28 @@ describe("HomePage (landing Pasok-Siaga look)", () => {
   });
 });
 
-describe("LoginPage and LoginForm", () => {
-  it("wraps the form in the landing look with a demo escape hatch", () => {
+describe("LoginPage", () => {
+  it("is a password login with a demo escape hatch and no Dapur Sari clone promise", () => {
     render(<LoginPage />);
-    expect(screen.getByRole("heading", { level: 1, name: "Masuk dengan email" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Masuk ke workspace" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Buka demo tanpa masuk" })).toHaveAttribute("href", "/dashboard");
+    expect(screen.getByText(/Workspace kosong milik Anda/)).toBeInTheDocument();
+    expect(screen.queryByText(/Dapur Sari Anda/)).not.toBeInTheDocument();
+  });
+});
+
+describe("LoginForm (password only; link only for forgot password)", () => {
+  it("has no magic-link login: no tab, no OTP call, no 'Kirim Tautan Masuk'", async () => {
+    render(<LoginForm />);
+    expect(screen.queryByRole("button", { name: /Tautan email/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Kirim Tautan Masuk" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Kata sandi")).toBeInTheDocument();
+    expect(signInWithOtp).not.toHaveBeenCalled();
   });
 
-  it("defaults to password login and goes to the workspace on success", async () => {
+  it("signs in with email and password and goes to the workspace", async () => {
     signInWithPassword.mockResolvedValue({ error: null });
     render(<LoginForm />);
-    expect(screen.getByRole("button", { name: /Kata sandi/ })).toHaveAttribute("aria-pressed", "true");
     await userEvent.type(screen.getByLabelText("Email"), "pemilik@dapur.id");
     await userEvent.type(screen.getByLabelText("Kata sandi"), "rahasia123");
     await userEvent.click(screen.getByRole("button", { name: "Masuk" }));
@@ -106,7 +118,7 @@ describe("LoginPage and LoginForm", () => {
     expect(signUp).not.toHaveBeenCalled();
   });
 
-  it("signs up: goes straight in when no confirmation is required, otherwise asks to check email", async () => {
+  it("signs up: straight in when no confirmation is required, otherwise asks to check email", async () => {
     signUp.mockResolvedValue({ data: { session: { access_token: "x" } }, error: null });
     const { unmount } = render(<LoginForm />);
     await userEvent.type(screen.getByLabelText("Email"), "baru@dapur.id");
@@ -121,30 +133,33 @@ describe("LoginPage and LoginForm", () => {
     await userEvent.type(screen.getByLabelText("Email"), "baru@dapur.id");
     await userEvent.type(screen.getByLabelText("Kata sandi"), "rahasia123");
     await userEvent.click(screen.getByRole("button", { name: "Daftar Akun Baru" }));
-    expect(await screen.findByText(/Cek email Anda/)).toBeInTheDocument();
+    expect(await screen.findByText(/tautan konfirmasi/)).toBeInTheDocument();
   });
 
-  it("sends a magic link from the email-link tab and confirms in Indonesian", async () => {
-    signInWithOtp.mockResolvedValue({ error: null });
+  it("forgot password: sends a reset link aimed at the change-password page and marks the browser", async () => {
+    resetPasswordForEmail.mockResolvedValue({ error: null });
     render(<LoginForm />);
-    await userEvent.click(screen.getByRole("button", { name: /Tautan email/ }));
-    expect(screen.queryByLabelText("Kata sandi")).not.toBeInTheDocument();
     await userEvent.type(screen.getByLabelText("Email"), "pemilik@dapur.id");
-    await userEvent.click(screen.getByRole("button", { name: "Kirim Tautan Masuk" }));
-    await waitFor(() => expect(signInWithOtp).toHaveBeenCalledTimes(1));
-    expect(signInWithOtp.mock.calls[0][0].email).toBe("pemilik@dapur.id");
-    expect(await screen.findByText(/Cek email Anda/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Lupa kata sandi?" }));
+    await waitFor(() => expect(resetPasswordForEmail).toHaveBeenCalledTimes(1));
+    const [email, options] = resetPasswordForEmail.mock.calls[0];
+    expect(email).toBe("pemilik@dapur.id");
+    expect(options.redirectTo).toMatch(/\/auth\/callback\?next=\/reset-password$/);
+    expect(document.cookie).toContain("microchain-reset=1");
+    expect(await screen.findByText(/tautan untuk mengubah kata sandi/)).toBeInTheDocument();
   });
 
-  it("shows a friendly rate-limit message for the magic link", async () => {
-    signInWithOtp.mockResolvedValue({ error: { code: "over_email_send_rate_limit", status: 429, message: "rate limit exceeded" } });
+  it("forgot password needs a valid email and reports rate limits in Indonesian", async () => {
     render(<LoginForm />);
-    await userEvent.click(screen.getByRole("button", { name: /Tautan email/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Lupa kata sandi?" }));
+    expect(screen.getByRole("alert").textContent).toMatch(/email yang valid/);
+    expect(resetPasswordForEmail).not.toHaveBeenCalled();
+
+    resetPasswordForEmail.mockResolvedValue({ error: { code: "over_email_send_rate_limit", status: 429, message: "rate limit" } });
     await userEvent.type(screen.getByLabelText("Email"), "pemilik@dapur.id");
-    await userEvent.click(screen.getByRole("button", { name: "Kirim Tautan Masuk" }));
-    const alert = await screen.findByRole("alert");
-    expect(alert.textContent).toMatch(/masuk dengan kata sandi/);
-    expect(alert.textContent).not.toMatch(/rate limit exceeded/);
+    await userEvent.click(screen.getByRole("button", { name: "Lupa kata sandi?" }));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toMatch(/Batas pengiriman email/));
+    expect(document.cookie).not.toContain("microchain-reset=1");
   });
 
   it("explains a failed callback from the ?error query", () => {

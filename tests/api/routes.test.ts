@@ -200,6 +200,32 @@ describe("GET /auth/callback", () => {
     expect(new URL(res.headers.get("location")!).host).toBe("localhost");
   });
 
+  it("sends reset links (next=/reset-password) to the change-password page, not the workspace, and skips workspace setup", async () => {
+    auth.exchangeCodeForSession.mockResolvedValue({ error: null });
+    const res = await authCallback(get("/auth/callback?code=abc&next=/reset-password"));
+    expect(new URL(res.headers.get("location")!).pathname).toBe("/reset-password");
+    expect(repo.loadUserWorkspace).not.toHaveBeenCalled();
+  });
+
+  it("also recognises the reset cookie when Supabase drops the next parameter, then clears it", async () => {
+    auth.exchangeCodeForSession.mockResolvedValue({ error: null });
+    const req = new NextRequest("http://localhost/auth/callback?code=abc", { headers: { cookie: "microchain-reset=1" } });
+    const res = await authCallback(req);
+    expect(new URL(res.headers.get("location")!).pathname).toBe("/reset-password");
+    expect(res.headers.get("set-cookie") ?? "").toMatch(/microchain-reset=;/);
+  });
+
+  it("only honours the exact /reset-password target; other next values go to the workspace", async () => {
+    auth.exchangeCodeForSession.mockResolvedValue({ error: null });
+    vi.mocked(repo.loadUserWorkspace).mockResolvedValue({ businessId: BUSINESS_ID, data: fresh() });
+    for (const next of ["/reset-password/../admin", "//evil.example", "https://evil.example/reset-password"]) {
+      const res = await authCallback(get("/auth/callback?code=abc&next=" + encodeURIComponent(next)));
+      const location = new URL(res.headers.get("location")!);
+      expect(location.pathname).toBe("/workspace");
+      expect(location.host).toBe("localhost");
+    }
+  });
+
   it("redirects to /login when the exchange fails", async () => {
     auth.exchangeCodeForSession.mockResolvedValue({ error: { message: "invalid" } });
     const res = await authCallback(get("/auth/callback?code=bad"));

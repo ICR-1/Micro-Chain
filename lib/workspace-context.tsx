@@ -216,7 +216,7 @@ export function WorkspaceProvider({ mode, children }: { mode: Mode; children: Re
         const ws = await request<WorkspaceData & { businessId: string }>("/api/workspace/reset", { method: "POST" });
         adopt({ snapshot: ws.snapshot, scenarios: ws.scenarios }, ws.businessId);
       }
-      setNotice("Data dikembalikan ke kondisi awal Dapur Sari.");
+      setNotice(mode === "demo" ? "Data dikembalikan ke kondisi awal Dapur Sari." : "Workspace dikosongkan. Mulai isi data usaha Anda di Data Usaha.");
     } catch (err) {
       if (!handleUnauthorized(err)) setActionError(err instanceof Error ? err.message : "Gagal mereset data.");
     } finally {
@@ -270,7 +270,7 @@ export function WorkspaceProvider({ mode, children }: { mode: Mode; children: Re
 export function WorkspaceGate({ children }: { children: ReactNode }) {
   const meta = useWorkspaceMeta();
   if (meta.status === "error") return <ErrorState message={meta.error ?? "Data belum dapat dimuat."} retry={meta.retry} />;
-  if (meta.status === "loading") return <Busy label="Memuat data Dapur Sari…" />;
+  if (meta.status === "loading") return <Busy label={meta.mode === "demo" ? "Memuat data Dapur Sari…" : "Memuat workspace Anda…"} />;
   return <>{children}</>;
 }
 

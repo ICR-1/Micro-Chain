@@ -39,7 +39,7 @@ export function DataEditor() {
             {({ dirty }) => <div className="parameter-actions">
               <div className="form-notice" aria-live="polite">{dirty || unsimulated ? "Perubahan belum disimulasikan" : (notice ?? applied)}</div>
               <div className="action-row">
-                <Button type="button" variant="outline" disabled={resetting} onClick={() => setConfirming(true)}><RotateCcw size={17} aria-hidden="true" /> {isDemo ? "Reset Demo" : "Reset ke Data Awal"}</Button>
+                <Button type="button" variant="outline" disabled={resetting} onClick={() => setConfirming(true)}><RotateCcw size={17} aria-hidden="true" /> {isDemo ? "Reset Demo" : "Kosongkan Data"}</Button>
                 <Button type="submit" disabled={!dirty}><Save size={17} aria-hidden="true" /> {isDemo ? "Simpan Perubahan" : "Terapkan Perubahan"}</Button>
               </div>
             </div>}
@@ -47,9 +47,9 @@ export function DataEditor() {
           {confirming && (
             <div className="state-panel confirm-panel" role="alertdialog" aria-label="Konfirmasi reset">
               <CircleAlert size={20} aria-hidden="true" />
-              <p>Kembalikan semua data dan skenario ke kondisi awal Dapur Sari? Perubahan Anda{isDemo ? "" : " di workspace"} akan hilang.</p>
+              <p>{isDemo ? "Kembalikan semua data dan skenario ke kondisi awal Dapur Sari? Perubahan Anda akan hilang." : "Hapus semua data dan skenario di workspace Anda lalu mulai dari nol? Tindakan ini tidak bisa dibatalkan."}</p>
               <Button type="button" variant="outline" size="sm" onClick={() => setConfirming(false)}>Batal</Button>
-              <Button type="button" size="sm" onClick={confirmReset}>Ya, Reset</Button>
+              <Button type="button" size="sm" onClick={confirmReset}>{isDemo ? "Ya, Reset" : "Ya, Kosongkan"}</Button>
             </div>
           )}
           {actionError && <div className="state-panel error-panel" role="alert"><CircleAlert size={20} aria-hidden="true" /><p>{actionError}</p></div>}

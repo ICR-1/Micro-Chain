@@ -68,3 +68,9 @@ Kembali ke [[MicroChain Hub]] | Lihat [[docs/PRD|PRD]] | Lihat [[docs/superpower
 - Buka aplikasi lewat http://localhost:3000 (bukan IP jaringan) saat login: verifier PKCE tersimpan per origin.
 
 - Login kata sandi ditambahkan di /login (default) + Daftar Akun Baru; Magic Link tetap sebagai tab kedua. Diverifikasi di Supabase asli: sandi benar 200, salah invalid_credentials. Catatan: mailer_autoconfirm=false, jadi Daftar Akun Baru dan Magic Link sama-sama mengirim email (batas bawaan kecil); akun tanpa email dibuat lewat Admin API.
+
+## Keputusan akun (2026-11-25)
+- Login hanya kata sandi (Masuk, Daftar Akun Baru). Tautan email HANYA untuk Lupa kata sandi: resetPasswordForEmail -> /auth/callback?next=/reset-password -> halaman /reset-password (updateUser). Cookie microchain-reset menjadi cadangan bila Supabase membuang parameter next. Galat pengiriman email dipetakan ke pesan Indonesia.
+- Pengguna login TIDAK lagi mendapat salinan Dapur Sari: RPC ensure_workspace membuat workspace kosong (Usaha Saya, 3 skenario inti, slug usaha). ensure_demo_workspace dihapus. Dapur Sari hanya untuk mode tamu (demo_templates).
+- Tombol workspace: Reset menjadi Kosongkan Data (dengan konfirmasi). Dashboard menampilkan panel Mulai dari nol bila workspace kosong.
+- Salinan Dapur Sari lama di akun uji dihapus; diverifikasi dengan JWT akun: 0 pemasok/bahan/produk, 3 skenario, ensure_workspace idempoten.

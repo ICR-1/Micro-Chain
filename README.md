@@ -16,6 +16,8 @@ Perintah: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`.
 
 Terapkan `supabase/setup.sql` (gabungan semua migrasi, idempoten) lewat Supabase Dashboard > SQL Editor, atau `node scripts/apply-migrations.mjs` dengan `SUPABASE_PROJECT_REF` dan `SUPABASE_ACCESS_TOKEN` (personal access token `sbp_...` dari Account > Access Tokens; password database tidak bisa dipakai di sini). Di Authentication > URL Configuration, daftarkan `<origin>/auth/callback` sebagai Redirect URL.
 
+Login memakai email dan kata sandi (tautan email hanya untuk Lupa kata sandi). Pengguna baru mendapat workspace kosong; data Dapur Sari hanya untuk mode tamu.
+
 Rute: `/` landing, `/dashboard` `/network` `/simulator` `/comparison` `/data` ruang demo tamu (tanpa login), `/login`, `/workspace/*` ruang kerja tersimpan (perlu login). Dokumen desain ada di `docs/`.
 
 ## Atribusi dan lisensi

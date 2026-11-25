@@ -3,7 +3,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DAPUR_SARI_FALLBACK_FIXTURE } from "@/lib/domain/fixture";
+import { DAPUR_SARI_FALLBACK_FIXTURE, EMPTY_WORKSPACE_FIXTURE } from "@/lib/domain/fixture";
 import { computeInputsSignature } from "@/lib/domain/signature";
 import { compareScenarios } from "@/lib/solver/compare";
 import { solveScenario } from "@/lib/solver/milp-solver";
@@ -34,6 +34,7 @@ const STALE = /hasil simulasi sebelumnya sudah basi/i;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let calls: { url: string; method: string; body: any }[];
 let workspaceStatus = 200;
+let workspaceKind: "empty" | "demo" = "empty";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -49,9 +50,9 @@ async function handler(url: string, init?: RequestInit): Promise<Response> {
     return json({ results, comparison, inputs_signature: computeInputsSignature(body.snapshot, body.scenarios) });
   }
   if (url === "/api/workspace" && method === "GET")
-    return workspaceStatus === 401 ? json({ error: "Anda belum masuk." }, 401) : json({ businessId: BUSINESS_ID, ...fixture() });
+    return workspaceStatus === 401 ? json({ error: "Anda belum masuk." }, 401) : json({ businessId: BUSINESS_ID, ...(workspaceKind === "empty" ? structuredClone(EMPTY_WORKSPACE_FIXTURE) : fixture()) });
   if (url === "/api/workspace" && method === "PUT") return json({ ok: true, snapshot: body.snapshot, scenarios: body.scenarios });
-  if (url === "/api/workspace/reset") return json({ businessId: BUSINESS_ID, ...fixture() });
+  if (url === "/api/workspace/reset") return json({ businessId: BUSINESS_ID, ...structuredClone(EMPTY_WORKSPACE_FIXTURE) });
   return json({ error: "tidak ditemukan" }, 404);
 }
 const count = (url: string) => calls.filter((c) => c.url === url).length;
@@ -66,6 +67,7 @@ function stubMatchMedia(mobile: boolean) {
 beforeEach(() => {
   calls = [];
   workspaceStatus = 200;
+  workspaceKind = "empty";
   replace.mockReset();
   sessionStorage.clear();
   stubMatchMedia(true);
@@ -269,7 +271,7 @@ describe("Comparison", () => {
     expect(within(metrics).getByText(RP("240.000"))).toBeInTheDocument();
     expect(within(metrics).getByText(RP("132.000"))).toBeInTheDocument();
     expect(within(metrics).getByText("55%")).toBeInTheDocument();
-    expect(screen.getByTestId("chart")).toBeInTheDocument();
+    expect(await screen.findByTestId("chart")).toBeInTheDocument(); // dimuat lewat dynamic import
     const table = screen.getAllByRole("table")[0];
     expect(within(table).getByText(RP("450.000"))).toBeInTheDocument();
     expect(within(table).getByText(RP("210.000"))).toBeInTheDocument();
@@ -394,10 +396,64 @@ describe("Workspace mode (logged in)", () => {
     expect(sessionStorage.length).toBe(0); // workspace tidak memakai penyimpanan sesi tamu
   });
 
-  it("resets the persisted workspace through the API after confirmation", async () => {
+  it("empties the persisted workspace through the API after confirmation (starts from zero, not Dapur Sari)", async () => {
     await renderPage("workspace", "data");
-    await userEvent.click(screen.getByRole("button", { name: "Reset ke Data Awal" }));
-    await userEvent.click(screen.getByRole("button", { name: "Ya, Reset" }));
+    await userEvent.click(screen.getByRole("button", { name: "Kosongkan Data" }));
+    expect(screen.getByRole("alertdialog").textContent).toMatch(/mulai dari nol/);
+    await userEvent.click(screen.getByRole("button", { name: "Ya, Kosongkan" }));
     await waitFor(() => expect(calls.some((c) => c.url === "/api/workspace/reset" && c.method === "POST")).toBe(true));
+  });
+});
+
+describe("Workspace kosong untuk pengguna baru", () => {
+  it("does not contain any Dapur Sari data and offers to start from zero", async () => {
+    await renderPage("workspace");
+    expect(screen.getByText("Mulai dari nol")).toBeInTheDocument();
+    expect(screen.queryByText("Tepung terigu")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Dapur Sari/)).not.toBeInTheDocument();
+    expect(screen.getAllByText("Usaha Saya").length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: "Isi Data Usaha" })).toHaveAttribute("href", "/workspace/data");
+  });
+
+  it("shows an empty-state message on the network page", async () => {
+    await renderPage("workspace", "network");
+    expect(screen.getByText(/Belum ada pemasok, bahan, atau produk/)).toBeInTheDocument();
+  });
+
+  it("runs the solver on empty data without errors (Rp 0)", async () => {
+    await renderPage("workspace", "simulator");
+    await userEvent.click(screen.getByRole("button", { name: "Jalankan Simulasi" }));
+    await screen.findByRole("heading", { name: "Hasil Simulasi" });
+    expect(screen.getByText("Optimal")).toBeInTheDocument();
+    expect(screen.getAllByText(/^Rp\s0$/).length).toBeGreaterThan(0);
+  });
+
+  it("lets the user build a business from zero and simulate it", async () => {
+    await renderPage("workspace", "data");
+    await userEvent.type(screen.getByLabelText("Nama bahan baru"), "Tepung");
+    await userEvent.click(screen.getByRole("button", { name: /Tambah Bahan/ }));
+    await userEvent.type(screen.getByLabelText("Nama produk baru"), "Roti");
+    await userEvent.click(screen.getByRole("button", { name: /Tambah Produk/ }));
+
+    const contribution = screen.getByLabelText("Kontribusi Roti (Rp per unit)");
+    await userEvent.clear(contribution);
+    await userEvent.type(contribution, "3000");
+    const recipe = screen.getByLabelText("Resep Roti – Tepung (g)");
+    await userEvent.clear(recipe);
+    await userEvent.type(recipe, "100");
+
+    const stock = screen.getByLabelText("Stok tepung (g)");
+    await userEvent.clear(stock);
+    await userEvent.type(stock, "1000");
+    const demand = screen.getByLabelText("Permintaan roti (unit)");
+    await userEvent.clear(demand);
+    await userEvent.type(demand, "5");
+    await userEvent.click(screen.getByRole("button", { name: "Terapkan Perubahan" }));
+
+    await go("simulator");
+    await userEvent.click(screen.getByRole("button", { name: "Jalankan Simulasi" }));
+    await screen.findByRole("heading", { name: "Hasil Simulasi" });
+    expect(screen.getAllByText(/^Rp\s15\.000$/).length).toBeGreaterThan(0);
+    expect(screen.getByText("Optimal")).toBeInTheDocument();
   });
 });

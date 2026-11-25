@@ -1,41 +1,39 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { CircleAlert, KeyRound, Mail, MailCheck } from "lucide-react";
+import { CircleAlert, MailCheck } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 
 const CALLBACK_ERRORS: Record<string, string> = {
-  tautan: "Tautan masuk tidak lengkap. Minta tautan baru di bawah.",
-  kedaluwarsa: "Tautan masuk sudah kedaluwarsa atau pernah dipakai. Minta tautan baru di bawah.",
+  tautan: "Tautan tidak lengkap. Minta tautan baru lewat Lupa kata sandi.",
+  kedaluwarsa: "Tautan sudah kedaluwarsa atau pernah dipakai. Minta tautan baru lewat Lupa kata sandi.",
   server: "Kami gagal menyiapkan workspace Anda. Coba masuk lagi beberapa saat lagi.",
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD = 8;
-
-type Method = "password" | "link";
-type Status = "idle" | "sending" | "sent";
+export const MIN_PASSWORD = 8;
+/** Penanda singkat agar /auth/callback tahu tautan ini untuk mengubah kata sandi, bahkan bila `next` hilang. */
+export const RESET_COOKIE = "microchain-reset";
 
 interface AuthFailure {
   code?: string;
   status?: number;
-  message?: string;
 }
 
 /** Ubah galat Supabase menjadi pesan Indonesia yang aman (tanpa detail penyedia). */
-function describeFailure(error: AuthFailure, action: "masuk" | "daftar" | "tautan"): string {
+function describeFailure(error: AuthFailure, action: "masuk" | "daftar" | "reset"): string {
   if (error.code === "over_email_send_rate_limit" || error.status === 429) {
-    return "Batas pengiriman email tercapai. Tunggu beberapa saat, atau masuk dengan kata sandi.";
+    return "Batas pengiriman email tercapai. Tunggu beberapa saat lalu coba lagi.";
   }
   if (error.code === "invalid_credentials") return "Email atau kata sandi salah.";
   if (error.code === "email_not_confirmed") return "Email belum dikonfirmasi. Buka tautan konfirmasi yang dikirim ke email Anda.";
   if (error.code === "user_already_exists" || error.code === "email_exists") return "Email ini sudah terdaftar. Silakan masuk.";
   if (error.code === "weak_password") return `Kata sandi terlalu lemah. Gunakan minimal ${MIN_PASSWORD} karakter dengan kombinasi huruf dan angka.`;
   if (action === "daftar") return "Gagal mendaftar. Periksa data Anda lalu coba lagi.";
-  if (action === "tautan") return "Gagal mengirim tautan masuk. Periksa email Anda lalu coba lagi.";
+  if (action === "reset") return "Gagal mengirim tautan. Periksa email Anda lalu coba lagi.";
   return "Gagal masuk. Periksa email dan kata sandi Anda lalu coba lagi.";
 }
 
@@ -44,11 +42,10 @@ export default function LoginForm() {
   const params = useSearchParams();
   const callbackError = CALLBACK_ERRORS[params.get("error") ?? ""] ?? null;
 
-  const [method, setMethod] = useState<Method>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [status, setStatus] = useState<Status>("idle");
-  const [sentMessage, setSentMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [sentMessage, setSentMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function validEmail() {
@@ -59,7 +56,7 @@ export default function LoginForm() {
     return true;
   }
 
-  async function signInWithPassword(event: FormEvent<HTMLFormElement>) {
+  async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!validEmail()) return;
     if (!password) {
@@ -67,10 +64,10 @@ export default function LoginForm() {
       return;
     }
     setError(null);
-    setStatus("sending");
+    setBusy(true);
     const { error: failure } = await createClient().auth.signInWithPassword({ email: email.trim(), password });
     if (failure) {
-      setStatus("idle");
+      setBusy(false);
       setError(describeFailure(failure as AuthFailure, "masuk"));
       return;
     }
@@ -85,14 +82,14 @@ export default function LoginForm() {
       return;
     }
     setError(null);
-    setStatus("sending");
+    setBusy(true);
     const { data, error: failure } = await createClient().auth.signUp({
       email: email.trim(),
       password,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     if (failure) {
-      setStatus("idle");
+      setBusy(false);
       setError(describeFailure(failure as AuthFailure, "daftar"));
       return;
     }
@@ -101,29 +98,27 @@ export default function LoginForm() {
       router.refresh();
       return;
     }
+    setBusy(false);
     setSentMessage(`Kami mengirim tautan konfirmasi ke ${email.trim()}. Buka tautan itu, lalu masuk dengan kata sandi Anda.`);
-    setStatus("sent");
   }
 
-  async function sendLink(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function forgotPassword() {
     if (!validEmail()) return;
     setError(null);
-    setStatus("sending");
-    const { error: failure } = await createClient().auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback`, shouldCreateUser: true },
+    setBusy(true);
+    const { error: failure } = await createClient().auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
     });
+    setBusy(false);
     if (failure) {
-      setStatus("idle");
-      setError(describeFailure(failure as AuthFailure, "tautan"));
+      setError(describeFailure(failure as AuthFailure, "reset"));
       return;
     }
-    setSentMessage(`Kami mengirim tautan masuk ke ${email.trim()}. Buka tautan itu di browser ini.`);
-    setStatus("sent");
+    document.cookie = `${RESET_COOKIE}=1; path=/; max-age=3600; samesite=lax`;
+    setSentMessage(`Jika ${email.trim()} terdaftar, kami mengirim tautan untuk mengubah kata sandi. Buka tautan itu di browser ini.`);
   }
 
-  if (status === "sent") {
+  if (sentMessage) {
     return (
       <div className="estimate-notice" role="status">
         <MailCheck size={18} aria-hidden="true" />
@@ -133,65 +128,50 @@ export default function LoginForm() {
   }
 
   const message = error ?? callbackError;
-  const busy = status === "sending";
 
   return (
-    <div className="login-form">
-      <div className="view-toggle login-method" role="group" aria-label="Metode masuk">
-        <Button type="button" size="sm" variant="ghost" aria-pressed={method === "password"} onClick={() => { setMethod("password"); setError(null); }}>
-          <KeyRound size={16} aria-hidden="true" /> Kata sandi
-        </Button>
-        <Button type="button" size="sm" variant="ghost" aria-pressed={method === "link"} onClick={() => { setMethod("link"); setError(null); }}>
-          <Mail size={16} aria-hidden="true" /> Tautan email
-        </Button>
+    <form onSubmit={signIn} noValidate className="login-form">
+      <div className="field">
+        <label htmlFor="email">Email</label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          aria-describedby={message ? "login-error" : undefined}
+          aria-invalid={message ? true : undefined}
+        />
       </div>
-
-      <form onSubmit={method === "password" ? signInWithPassword : sendLink} noValidate className="login-form">
-        <div className="field">
-          <label htmlFor="email">Email</label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            inputMode="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            aria-describedby={message ? "login-error" : undefined}
-            aria-invalid={message ? true : undefined}
-          />
+      <div className="field">
+        <label htmlFor="password">Kata sandi</label>
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <small className="field-hint">Untuk akun baru, gunakan minimal {MIN_PASSWORD} karakter.</small>
+      </div>
+      {message && (
+        <div className="state-panel error-panel" role="alert">
+          <CircleAlert size={20} aria-hidden="true" />
+          <p id="login-error">{message}</p>
         </div>
-        {method === "password" && (
-          <div className="field">
-            <label htmlFor="password">Kata sandi</label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <small className="field-hint">Untuk akun baru, gunakan minimal {MIN_PASSWORD} karakter.</small>
-          </div>
-        )}
-        {message && (
-          <div className="state-panel error-panel" role="alert">
-            <CircleAlert size={20} aria-hidden="true" />
-            <p id="login-error">{message}</p>
-          </div>
-        )}
-        {method === "password" ? (
-          <div className="login-actions">
-            <Button type="submit" disabled={busy}>{busy ? "Memproses…" : "Masuk"}</Button>
-            <Button type="button" variant="outline" disabled={busy} onClick={signUp}>Daftar Akun Baru</Button>
-          </div>
-        ) : (
-          <Button type="submit" disabled={busy}>{busy ? "Mengirim…" : "Kirim Tautan Masuk"}</Button>
-        )}
-      </form>
-    </div>
+      )}
+      <div className="login-actions">
+        <Button type="submit" disabled={busy}>{busy ? "Memproses…" : "Masuk"}</Button>
+        <Button type="button" variant="outline" disabled={busy} onClick={signUp}>Daftar Akun Baru</Button>
+      </div>
+      <button type="button" className="login-forgot text-link" disabled={busy} onClick={forgotPassword}>
+        Lupa kata sandi?
+      </button>
+    </form>
   );
 }

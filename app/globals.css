@@ -462,3 +462,6 @@ select { appearance: auto; padding-right: 22px; }
 .login-method { justify-self: start; }
 .login-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .login-actions .button { flex: 1 1 140px; }
+.start-panel { margin-top: 0; margin-bottom: 18px; }
+.login-forgot { justify-self: start; padding: 0; border: 0; background: none; font: inherit; font-size: 13px; }
+.login-forgot:disabled { opacity: .6; cursor: not-allowed; }

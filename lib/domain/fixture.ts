@@ -93,3 +93,30 @@ export const DAPUR_SARI_FALLBACK_FIXTURE: WorkspaceData = {
     },
   ],
 };
+
+/** Workspace kosong yang dibuat untuk pengguna login baru (cermin `ensure_workspace` di database). */
+export const EMPTY_WORKSPACE_FIXTURE: WorkspaceData = {
+  snapshot: {
+    business: {
+      id: "usaha",
+      name: "Usaha Saya",
+      sector: "Isi sektor usaha Anda",
+      currency: "IDR",
+      planning_cutoff_date: "2026-11-24",
+      scenario_date: "2026-11-23",
+    },
+    suppliers: [],
+    materials: [],
+    products: [],
+    bom: [],
+    committed_deliveries: [],
+    alternative_offers: [],
+    scenario_date: "2026-11-23",
+    demo_data: false,
+  },
+  scenarios: [
+    { id: "baseline", name: "Normal", cutoff_date: "2026-11-24", disabled_supplier_ids: [], enabled_offer_ids: [], disruptions: [], overrides: {}, source: "user" },
+    { id: "outage", name: "Pemasok Utama Gagal", cutoff_date: "2026-11-24", disabled_supplier_ids: [], enabled_offer_ids: [], disruptions: [], overrides: {}, source: "user" },
+    { id: "mitigation", name: "Mitigasi: Pemasok Alternatif Aktif", cutoff_date: "2026-11-24", disabled_supplier_ids: [], enabled_offer_ids: [], disruptions: [], overrides: {}, source: "user" },
+  ],
+};

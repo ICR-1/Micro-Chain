@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
-import { DAPUR_SARI_FALLBACK_FIXTURE } from "@/lib/domain/fixture";
+import { DAPUR_SARI_FALLBACK_FIXTURE, EMPTY_WORKSPACE_FIXTURE } from "@/lib/domain/fixture";
 import { WorkspaceValidationError } from "@/lib/domain/validation";
 import type { WorkspaceData } from "@/lib/domain/types";
 import {
@@ -129,6 +129,26 @@ describe("rowsToWorkspaceData", () => {
   });
 });
 
+describe("empty workspace for new users", () => {
+  it("maps a brand-new empty workspace (no entities, 3 core scenarios) and passes validation", () => {
+    const empty = structuredClone(EMPTY_WORKSPACE_FIXTURE);
+    const mapped = rowsToWorkspaceData(toRows(empty));
+    expect(mapped.snapshot.business.name).toBe("Usaha Saya");
+    expect(mapped.snapshot.suppliers).toEqual([]);
+    expect(mapped.snapshot.materials).toEqual([]);
+    expect(mapped.snapshot.products).toEqual([]);
+    expect(mapped.scenarios.map((x) => x.id).sort()).toEqual(["baseline", "mitigation", "outage"]);
+    expect(mapped.snapshot.demo_data).toBe(false);
+  });
+
+  it("loadUserWorkspace returns the empty workspace without any Dapur Sari data", async () => {
+    const { client } = fakeSupabase({ rows: toRows(structuredClone(EMPTY_WORKSPACE_FIXTURE)) });
+    const res = await loadUserWorkspace(client);
+    expect(res.data.snapshot.business.id).not.toBe("dapur_sari");
+    expect(res.data.snapshot.products).toHaveLength(0);
+  });
+});
+
 describe("loadDemoTemplate", () => {
   it("validates and returns the demo_templates payload", async () => {
     const f = fresh();
@@ -149,7 +169,7 @@ describe("user workspace persistence", () => {
   it("loadUserWorkspace ensures the demo copy via RPC then loads rows", async () => {
     const { client, rpc } = fakeSupabase({ rows: toRows(fresh()) });
     const res = await loadUserWorkspace(client);
-    expect(rpc).toHaveBeenCalledWith("ensure_demo_workspace", { p_reset: false });
+    expect(rpc).toHaveBeenCalledWith("ensure_workspace", { p_reset: false });
     expect(res.businessId).toBe(BUSINESS_UUID);
     expect(res.data.scenarios).toHaveLength(3);
   });
@@ -181,10 +201,10 @@ describe("user workspace persistence", () => {
     expect(err.message).not.toContain("pg_internal");
   });
 
-  it("resetUserWorkspace calls ensure_demo_workspace with p_reset=true", async () => {
+  it("resetUserWorkspace calls ensure_workspace with p_reset=true", async () => {
     const { client, rpc } = fakeSupabase({ rows: toRows(fresh()) });
     const res = await resetUserWorkspace(client);
-    expect(rpc).toHaveBeenCalledWith("ensure_demo_workspace", { p_reset: true });
+    expect(rpc).toHaveBeenCalledWith("ensure_workspace", { p_reset: true });
     expect(res.businessId).toBe(BUSINESS_UUID);
   });
 });

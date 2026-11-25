@@ -222,7 +222,7 @@ async function loadRows(supabase: SupabaseClient, businessId: string): Promise<W
 }
 
 async function ensureWorkspace(supabase: SupabaseClient, reset: boolean) {
-  const { data, error } = await supabase.rpc("ensure_demo_workspace", { p_reset: reset });
+  const { data, error } = await supabase.rpc("ensure_workspace", { p_reset: reset });
   if (error) throw friendlyError(error, "Gagal menyiapkan workspace. Coba lagi beberapa saat.");
   if (typeof data !== "string") throw new WorkspaceRepoError("Gagal menyiapkan workspace.", 500);
   const businessId: string = data;

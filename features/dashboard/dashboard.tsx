@@ -13,6 +13,7 @@ export function Dashboard() {
   const { scenarios, snapshot, href } = useWorkspace();
   const baseline = scenarios.find((item) => item.id === "baseline") ?? scenarios[0];
   const network = useMemo(() => analyzeNetwork(snapshot, baseline), [snapshot, baseline]);
+  const isEmpty = snapshot.suppliers.length === 0 && snapshot.materials.length === 0 && snapshot.products.length === 0;
   const critical = new Set(network.single_source_risks.map(({ material_id }) => material_id));
   const name = snapshot.business.name.replace(/\s*\(DATA SIMULASI\)\s*$/i, "");
 
@@ -27,6 +28,13 @@ export function Dashboard() {
         <div className="overview-stat"><span>Bahan baku</span><strong>{formatNumber(snapshot.materials.length)}</strong></div>
         <div className="overview-stat"><span>Produk</span><strong>{formatNumber(snapshot.products.length)}</strong></div>
       </section>
+      {isEmpty && (
+        <section className="guide-panel start-panel">
+          <div className="guide-icon"><Boxes size={23} aria-hidden="true" /></div>
+          <div><h2>Mulai dari nol</h2><p>Workspace ini masih kosong. Tambahkan pemasok, bahan baku, produk, dan resep di Data Usaha, lalu jalankan simulasi.</p></div>
+          <Button asChild><Link href={href("/data")}>Isi Data Usaha</Link></Button>
+        </section>
+      )}
       <div className="dashboard-grid">
         <section className="panel">
           <header className="panel-heading"><div><h2>Stok bahan awal</h2><p>Posisi stok sebelum pengiriman terjadwal.</p></div><Boxes size={21} aria-hidden="true" /></header>
