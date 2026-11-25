@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { CircleAlert, MailCheck } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 
 const CALLBACK_ERRORS: Record<string, string> = {
@@ -44,23 +47,19 @@ export default function LoginForm() {
 
   if (status === "sent") {
     return (
-      <div role="status" className="rounded-lg border border-line bg-paper p-5">
-        <p className="font-semibold">Cek email Anda</p>
-        <p className="mt-1 text-ink-muted">
-          Kami mengirim tautan masuk ke <span className="num">{email.trim()}</span>. Buka tautan itu di browser ini.
-        </p>
+      <div className="estimate-notice" role="status">
+        <MailCheck size={18} aria-hidden="true" />
+        <p><strong>Cek email Anda.</strong> Kami mengirim tautan masuk ke {email.trim()}. Buka tautan itu di browser ini.</p>
       </div>
     );
   }
 
   const message = error ?? callbackError;
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-4">
-      <div>
-        <label htmlFor="email" className="block text-sm font-semibold">
-          Email
-        </label>
-        <input
+    <form onSubmit={onSubmit} noValidate className="login-form">
+      <div className="field">
+        <label htmlFor="email">Email</label>
+        <Input
           id="email"
           name="email"
           type="email"
@@ -71,21 +70,17 @@ export default function LoginForm() {
           onChange={(e) => setEmail(e.target.value)}
           aria-describedby={message ? "login-error" : undefined}
           aria-invalid={message ? true : undefined}
-          className="mt-1 block min-h-11 w-full rounded-md border border-line bg-paper px-3 text-base"
         />
       </div>
       {message && (
-        <p id="login-error" role="alert" className="rounded-md bg-danger-tint px-3 py-2 text-sm text-danger">
-          {message}
-        </p>
+        <div className="state-panel error-panel" role="alert">
+          <CircleAlert size={20} aria-hidden="true" />
+          <p id="login-error">{message}</p>
+        </div>
       )}
-      <button
-        type="submit"
-        disabled={status === "sending"}
-        className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-brand px-5 text-base font-semibold text-white hover:bg-brand-strong disabled:opacity-60"
-      >
-        {status === "sending" ? "Mengirim..." : "Kirim Tautan Masuk"}
-      </button>
+      <Button type="submit" disabled={status === "sending"}>
+        {status === "sending" ? "Mengirim…" : "Kirim Tautan Masuk"}
+      </Button>
     </form>
   );
 }

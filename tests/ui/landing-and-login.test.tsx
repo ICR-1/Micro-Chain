@@ -9,10 +9,15 @@ let searchError: string | null = null;
 vi.mock("next/navigation", () => ({
   useSearchParams: () => ({ get: (key: string) => (key === "error" ? searchError : null) }),
 }));
+vi.mock("next/image", () => ({
+  // eslint-disable-next-line @next/next/no-img-element
+  default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} />,
+}));
 
 import HomePage from "@/app/page";
 import LoginForm from "@/app/login/LoginForm";
-import { formatRupiah, formatRupiahShort, formatNumber, formatPercent } from "@/lib/format";
+import LoginPage from "@/app/login/page";
+import { formatDate, formatMoney, formatNumber, formatPercent, formatQuantity } from "@/lib/format";
 
 beforeEach(() => {
   signInWithOtp.mockReset();
@@ -20,30 +25,40 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-describe("HomePage", () => {
-  it("links the main CTA to /demo and a secondary link to /login", () => {
+describe("HomePage (landing Pasok-Siaga look)", () => {
+  it("links the main CTA to the demo workspace and offers login", () => {
     render(<HomePage />);
-    const cta = screen.getByRole("link", { name: "Coba Demo Dapur Sari" });
-    expect(cta).toHaveAttribute("href", "/demo");
-    expect(screen.getAllByRole("link", { name: /masuk/i }).some((a) => a.getAttribute("href") === "/login")).toBe(true);
+    expect(screen.getByRole("link", { name: /Coba Demo Dapur Sari/ })).toHaveAttribute("href", "/dashboard");
+    expect(screen.getByRole("link", { name: /Buka ruang demo/ })).toHaveAttribute("href", "/dashboard");
+    expect(screen.getByRole("link", { name: "Masuk" })).toHaveAttribute("href", "/login");
   });
 
-  it("shows the Dapur Sari headline numbers in Indonesian", () => {
-    render(<HomePage />);
-    expect(screen.getByText(/Rp 450 rb/)).toBeInTheDocument();
-    expect(screen.getByText(/Rp 210 rb/)).toBeInTheDocument();
-    expect(screen.getByText(/\+Rp 132 rb/)).toBeInTheDocument();
-    expect(screen.getByText(/55%/)).toBeInTheDocument();
-  });
-
-  it("contains a single h1 and no English placeholder copy", () => {
+  it("renders the hero photo asset, the three steps and the footer tagline in Indonesian", () => {
     const { container } = render(<HomePage />);
+    expect(screen.getByRole("img", { name: /Pembuat roti/ })).toHaveAttribute("src", "/dapur-sari.webp");
     expect(container.querySelectorAll("h1")).toHaveLength(1);
-    expect(container.textContent).not.toMatch(/lorem ipsum|get started|sign in|learn more|welcome to/i);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Saat pasokan\s*terganggu,\s*produksi tetap\s*terencana\./);
+    for (const title of ["Petakan jaringan pasok", "Uji gangguan pasokan", "Bandingkan rencana produksi"]) {
+      expect(screen.getByRole("heading", { name: title })).toBeInTheDocument();
+    }
+    expect(screen.getByText("Kenali Risiko. Simulasikan Dampak. Amankan Produksi.")).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/lorem ipsum|get started|sign in|learn more/i);
+  });
+
+  it("has a skip link and a labelled brand link", () => {
+    render(<HomePage />);
+    expect(screen.getByRole("link", { name: "Lewati ke isi" })).toHaveAttribute("href", "#isi");
+    expect(screen.getAllByRole("link", { name: "MicroChain, beranda" }).length).toBeGreaterThan(0);
   });
 });
 
-describe("LoginForm", () => {
+describe("LoginPage and LoginForm", () => {
+  it("wraps the form in the landing look with a demo escape hatch", () => {
+    render(<LoginPage />);
+    expect(screen.getByRole("heading", { level: 1, name: "Masuk dengan email" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Buka demo tanpa masuk" })).toHaveAttribute("href", "/dashboard");
+  });
+
   it("sends a magic link and confirms in Indonesian", async () => {
     signInWithOtp.mockResolvedValue({ error: null });
     render(<LoginForm />);
@@ -55,7 +70,7 @@ describe("LoginForm", () => {
     expect(await screen.findByText(/Cek email Anda/i)).toBeInTheDocument();
   });
 
-  it("shows a friendly error when sending fails", async () => {
+  it("shows a friendly error without leaking provider details", async () => {
     signInWithOtp.mockResolvedValue({ error: { message: "rate limit exceeded" } });
     render(<LoginForm />);
     await userEvent.type(screen.getByLabelText("Email"), "pemilik@dapur.id");
@@ -82,15 +97,16 @@ describe("LoginForm", () => {
   });
 });
 
-describe("format helpers", () => {
-  it("formats rupiah, numbers and percentages with id-ID separators", () => {
-    expect(formatRupiah(342000)).toBe("Rp 342.000");
-    expect(formatRupiah(-12000)).toBe("-Rp 12.000");
-    expect(formatRupiahShort(450000)).toBe("Rp 450 rb");
-    expect(formatRupiahShort(1_500_000)).toBe("Rp 1,5 jt");
+describe("format helpers (id-ID)", () => {
+  it("formats money, numbers, percentages, quantities and dates", () => {
+    expect(formatMoney(342000)).toMatch(/^Rp\s342\.000$/);
+    expect(formatMoney(null)).toBe("—");
     expect(formatNumber(25000)).toBe("25.000");
     expect(formatPercent(55)).toBe("55%");
-    expect(formatPercent(53.3333)).toBe("53,3%");
-    expect(formatPercent(Number.NaN)).toBe("0%");
+    expect(formatPercent(null)).toBe("Tidak berlaku");
+    expect(formatQuantity(8000, "g")).toBe("8 kg");
+    expect(formatQuantity(250, "g")).toBe("250 g");
+    expect(formatQuantity(12, "pcs")).toBe("12 buah");
+    expect(formatDate("2026-11-24")).toBe("24 November 2026");
   });
 });

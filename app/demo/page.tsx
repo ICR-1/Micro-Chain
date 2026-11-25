@@ -1,8 +1,6 @@
-import type { Metadata } from "next";
-import MicroChainWorkspace from "@/components/workspace/MicroChainWorkspace";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Demo Dapur Sari" };
-
-export default function DemoPage() {
-  return <MicroChainWorkspace mode="demo" />;
+/** Alamat lama mode tamu; ruang demo sekarang di /dashboard. */
+export default function DemoIndex() {
+  redirect("/dashboard");
 }

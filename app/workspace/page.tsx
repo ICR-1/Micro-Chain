@@ -1,8 +1,5 @@
-import type { Metadata } from "next";
-import MicroChainWorkspace from "@/components/workspace/MicroChainWorkspace";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Workspace" };
-
-export default function WorkspacePage() {
-  return <MicroChainWorkspace mode="workspace" />;
+export default function WorkspaceIndex() {
+  redirect("/workspace/dashboard");
 }
