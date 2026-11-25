@@ -52,3 +52,11 @@ Kembali ke [[MicroChain Hub]] | Lihat [[docs/PRD|PRD]] | Lihat [[docs/superpower
 - Signature basi memakai SHA-256 TypeScript sinkron (`lib/domain/sha256.ts`) agar identik di klien dan server; nama, catatan, dan metadata tampilan tidak ikut sehingga tidak ada status basi palsu.
 - Mutasi entitas (tambah/hapus dengan cascade) dipisah ke `lib/domain/mutations.ts` dan diuji; `validateSimulationInput` tidak mewajibkan 3 skenario inti, `validateWorkspaceData` mewajibkannya.
 - Next.js 16 memakai `proxy.ts` (bukan `middleware.ts`); `vitest@5` + `@types/node@24` dipilih agar sesuai peer `@testing-library/jest-dom@8`.
+
+## Redesain UI (2026-11-25, branch feat/pasok-siaga-ui)
+- Tampilan mengikuti Zeeynrs/Pasok-Siaga: CSS, foto hero, landing, sidebar ruang kerja, halaman dashboard/network/simulator/comparison/data. Merek tetap MicroChain.
+- Rute demo tamu di `/dashboard` dst; workspace login di `/workspace/*`; `/demo` mengalihkan ke `/dashboard`.
+- Fitur MicroChain dipertahankan: login Magic Link, simpan/reset workspace, status hasil basi, skenario kustom, keterlambatan pengiriman, editor struktur usaha.
+- `lib/view-models.ts` mengubah hasil solver ke tipe tampilan; `lib/solver/inputs.ts` dipakai solver dan analisis jaringan.
+- `cacheComponents`/`partialPrefetching` dihapus dari `next.config.ts` (diagnostik eksperimental, tidak dipakai referensi).
+- Lisensi: kode/aset dari repo GPL-3.0, lihat `NOTICE.md`; keputusan lisensi proyek ada pada pemilik.
