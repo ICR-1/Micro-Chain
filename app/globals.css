@@ -68,3 +68,8 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* React Flow v13 memakai light-dark(); paksa tema terang agar kanvas tidak ikut mode gelap sistem. */
+div.react-flow {
+  color-scheme: light;
+}

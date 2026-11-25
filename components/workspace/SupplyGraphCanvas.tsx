@@ -22,7 +22,7 @@ function SupplyCard({ data }: NodeProps<CardNode>) {
         type="button"
         onClick={() => onSelect(node.id)}
         aria-pressed={selected}
-        className={`w-[200px] rounded-md border bg-paper px-3 py-2 text-left shadow-sm ${
+        className={`pointer-events-auto w-[200px] rounded-md border bg-paper px-3 py-2 text-left shadow-sm ${
           selected ? "border-brand ring-2 ring-brand" : "border-line hover:border-ink"
         }`}
       >
@@ -72,7 +72,8 @@ export default function SupplyGraphCanvas({ network, selectedId, onSelect }: Pro
         id: e.id,
         source: e.source,
         target: e.target,
-        label: e.label,
+        // Label resep hanya muncul untuk node terpilih agar tidak bertumpuk.
+        label: e.kind === "bom" && e.source !== selectedId && e.target !== selectedId ? undefined : e.label,
         type: "smoothstep",
         selectable: false,
         animated: false,
@@ -84,7 +85,7 @@ export default function SupplyGraphCanvas({ network, selectedId, onSelect }: Pro
         labelStyle: { fontSize: 11, fill: "#132a23" },
         labelBgStyle: { fill: "#f7f8f5" },
       })),
-    [network.edges],
+    [network.edges, selectedId],
   );
 
   return (

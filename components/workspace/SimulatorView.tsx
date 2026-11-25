@@ -103,7 +103,7 @@ export default function SimulatorView({
         )}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[22rem_1fr]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[22rem_minmax(0,1fr)]">
         {/* Parameter skenario */}
         <section aria-label="Parameter skenario" className="space-y-5 rounded-lg border border-line bg-paper p-4">
           <DateField
@@ -115,7 +115,7 @@ export default function SimulatorView({
             Bahan yang tiba setelah tanggal ini tidak bisa dipakai. Tanggal simulasi: {formatDate(snapshot.scenario_date)}.
           </p>
 
-          <fieldset>
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold">Pemasok</legend>
             <div className="mt-2 space-y-2">
               {snapshot.suppliers.map((s) => (
@@ -139,7 +139,7 @@ export default function SimulatorView({
             </div>
           </fieldset>
 
-          <fieldset>
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold">Penawaran cadangan</legend>
             <div className="mt-2 space-y-2">
               {snapshot.alternative_offers.map((o) => (
@@ -168,7 +168,7 @@ export default function SimulatorView({
             </div>
           </fieldset>
 
-          <fieldset>
+          <fieldset className="min-w-0">
             <legend className="text-sm font-semibold">Keterlambatan pengiriman</legend>
             <div className="mt-2 space-y-3">
               {snapshot.committed_deliveries.map((d) => (

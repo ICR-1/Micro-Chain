@@ -17,19 +17,19 @@ Kembali ke [[MicroChain Hub]] | Lihat [[docs/PRD|PRD]] | Lihat [[docs/superpower
 - [x] **Approval Gate:** Disetujui pengguna; eksekusi dialihkan ke sesi Claude dengan MCP Supabase aktif
 
 ## M2 — Fondasi Next.js, Domain Kanonik & Solver MILP Deterministik (TDD)
-- [ ] Task 1: Scaffolding `create-next-app@latest` (tanpa `src/`), dependensi, `.env.example`, config `highs` WASM
-- [ ] Task 2: `types.ts`, `validation.ts` (paritas CHECK Postgres), `signature.ts` (deteksi basi), unit tests
-- [ ] Task 3: `highs-loader.ts`, `milp-solver.ts`, `compare.ts`, unit tests Dapur Sari + 5 kasus Review Focus
-- [ ] Task 4: `graph.ts` (pembangun graf 3 kolom + deteksi *single-supplier*), unit tests
+- [x] Task 1: Scaffolding `create-next-app@latest` (tanpa `src/`), dependensi, `.env.example`, config `highs` WASM
+- [x] Task 2: `types.ts`, `validation.ts` (paritas CHECK Postgres), `signature.ts` (deteksi basi), unit tests
+- [x] Task 3: `highs-loader.ts`, `milp-solver.ts`, `compare.ts`, unit tests Dapur Sari + 5 kasus Review Focus
+- [x] Task 4: `graph.ts` (pembangun graf 3 kolom + deteksi *single-supplier*), unit tests
 
 ## M3 — Backend Next.js & Integrasi Supabase Auth + RLS
-- [ ] Task 5: Migrasi SQL (`drop on_auth_user_created` + `save_workspace_snapshot` RPC), klien `@supabase/ssr`, `workspace-repo.ts`, unit tests
-- [ ] Task 6: Route Handlers (`/api/demo`, `/api/simulate`, `/api/simulate/compare`, `/api/workspace`, `/api/workspace/reset`, `/auth/callback`), integration tests
+- [x] Task 5: Migrasi SQL (`drop on_auth_user_created` + `save_workspace_snapshot` RPC), klien `@supabase/ssr`, `workspace-repo.ts`, unit tests
+- [x] Task 6: Route Handlers (`/api/demo`, `/api/simulate`, `/api/simulate/compare`, `/api/workspace`, `/api/workspace/reset`, `/auth/callback`), integration tests
 
 ## M4 — UI Berbahasa Indonesia (P0 Demo & P1 Workspace)
-- [ ] Task 7: Landing `/` + CTA "Coba Demo Dapur Sari" + `/login` Magic Link + UI tests
-- [ ] Task 8: `SupplyGraphView` (React Flow `>=640px` / daftar `<640px`) + `SimulatorView` + UI tests
-- [ ] Task 9: `ComparisonView` (Rp & %) + `BusinessDataView` + `MicroChainWorkspace` (`/demo` & `/workspace`) + alur status basi & reset + UI tests
+- [x] Task 7: Landing `/` + CTA "Coba Demo Dapur Sari" + `/login` Magic Link + UI tests
+- [x] Task 8: `SupplyGraphView` (React Flow `>=640px` / daftar `<640px`) + `SimulatorView` + UI tests
+- [x] Task 9: `ComparisonView` (Rp & %) + `BusinessDataView` + `MicroChainWorkspace` (`/demo` & `/workspace`) + alur status basi & reset + UI tests
 
 ## M5 — Verifikasi Akhir & Hand-off
 - [ ] Task 10: `npm test`, `tsc --noEmit`, `npm run lint`, `npm run build`, uji browser `1440px` & `390px`, dan pembaruan [[MicroChain Hub]]
@@ -40,3 +40,14 @@ Kembali ke [[MicroChain Hub]] | Lihat [[docs/PRD|PRD]] | Lihat [[docs/superpower
 - Tiga skenario inti (`baseline`, `outage`, `mitigation`) dilindungi dari penghapusan dan `slug`-nya mengikat metrik `ComparisonSummary`, sedangkan skenario ke-4+ bersifat opsional.
 - Simulasi dijalankan otomatis sekali saat awal membuka `/demo` & `/workspace`, tidak auto-solve di tiap ketikan agar status **basi** (*stale*) terlihat jelas, dan penyimpanan ke DB di `/workspace` memakai tombol eksplisit **"Simpan ke Workspace"**.
 - `businesses.slug` workspace pengguna tetap `'dapur_sari'` agar reset via `ensure_demo_workspace(true)` konsisten, sedangkan nama & sektor usaha bebas diubah.
+
+## Catatan Eksekusi (Claude, 2026-11-25)
+- **Task 10 sebagian selesai:** `npm test` 116/116, `tsc --noEmit`, `npm run lint`, `npm run build` bersih; uji browser `1440px` dan `390px` selesai terhadap server tiruan PostgREST (tanpa `console` galat, tanpa overflow horizontal). **Belum:** uji end-to-end terhadap database Supabase nyata (lihat BLOCKED).
+- **BLOCKED — database:** project Supabase `agrwkruicgrewnixvpdj` kosong (tidak ada `demo_templates`) dan token `sbp_...` yang diberikan ditolak Management API (`401 Invalid access token`). Migrasi sudah siap di `supabase/migrations/` dan versi gabungan `supabase/setup.sql` (tempel di SQL Editor, atau `node scripts/apply-migrations.mjs` dengan token valid). Setelah diterapkan: uji Magic Link (Auth > URL Configuration: tambahkan `<origin>/auth/callback`), `/api/demo` dan `/workspace`.
+
+## Decisions Made Autonomously (Claude)
+- Skema lengkap dibuat ulang lewat migrasi karena project target kosong (Hub lama merujuk `zphvhcfjurhgxeilkbkk`). Migrasi dipecah: `..110000_microchain_schema`, `..115000_seed_demo_template` (dibangkitkan dari fixture oleh `scripts/gen-seed-migration.mts`), `..120000_save_workspace_and_ensure_demo_rpc`, `..130000_cleanup_legacy_auth_trigger`.
+- `ensure_demo_workspace` memanggil `save_workspace_snapshot` (upsert per slug, UUID stabil) agar satu jalur kode untuk klon dan simpan.
+- Signature basi memakai SHA-256 TypeScript sinkron (`lib/domain/sha256.ts`) agar identik di klien dan server; nama, catatan, dan metadata tampilan tidak ikut sehingga tidak ada status basi palsu.
+- Mutasi entitas (tambah/hapus dengan cascade) dipisah ke `lib/domain/mutations.ts` dan diuji; `validateSimulationInput` tidak mewajibkan 3 skenario inti, `validateWorkspaceData` mewajibkannya.
+- Next.js 16 memakai `proxy.ts` (bukan `middleware.ts`); `vitest@5` + `@types/node@24` dipilih agar sesuai peer `@testing-library/jest-dom@8`.
