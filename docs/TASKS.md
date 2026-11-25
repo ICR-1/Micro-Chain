@@ -60,3 +60,9 @@ Kembali ke [[MicroChain Hub]] | Lihat [[docs/PRD|PRD]] | Lihat [[docs/superpower
 - `lib/view-models.ts` mengubah hasil solver ke tipe tampilan; `lib/solver/inputs.ts` dipakai solver dan analisis jaringan.
 - `cacheComponents`/`partialPrefetching` dihapus dari `next.config.ts` (diagnostik eksperimental, tidak dipakai referensi).
 - Lisensi: kode/aset dari repo GPL-3.0, lihat `NOTICE.md`; keputusan lisensi proyek ada pada pemilik.
+
+## Akun dan login (2026-11-25)
+- User Auth dibuat lewat Admin API (secret key); user penanda uji dihapus. Diverifikasi dengan JWT user: ensure_demo_workspace membentuk 8 tabel, RLS menolak anon, GET/PUT/reset /api/workspace lolos, tanpa cookie 401.
+- Galat HMR ws://192.168.56.1: diperbaiki dengan allowedDevOrigins di next.config.ts (perlu restart server dev).
+- proxy.ts meneruskan ?code= di / ke /auth/callback bila Redirect URL belum didaftarkan di Supabase.
+- Buka aplikasi lewat http://localhost:3000 (bukan IP jaringan) saat login: verifier PKCE tersimpan per origin.
