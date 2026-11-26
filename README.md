@@ -1,6 +1,6 @@
 # MicroChain
 
-Simulasi ketahanan rantai pasok UMKM makanan (demo: Dapur Sari). Next.js 16 (App Router), TypeScript, Tailwind CSS 4, React Flow, solver MILP `highs` (WASM) di server, Supabase (Magic Link + Postgres RLS).
+Simulasi ketahanan rantai pasok UMKM makanan (demo: Dapur Sari). Next.js 16 (App Router), TypeScript, Tailwind CSS 4, React Flow, solver MILP `highs` (WASM) di server, Supabase (Auth email + kata sandi, Postgres RLS).
 
 ## Menjalankan
 
@@ -22,4 +22,4 @@ Rute: `/` landing, `/dashboard` `/network` `/simulator` `/comparison` `/data` ru
 
 ## Atribusi dan lisensi
 
-Tampilan disalin dari [Zeeynrs/Pasok-Siaga](https://github.com/Zeeynrs/Pasok-Siaga) (GPL-3.0). Lihat `NOTICE.md`.
+Fork dari [Zeeynrs/Pasok-Siaga](https://github.com/Zeeynrs/Pasok-Siaga): tampilannya disalin dan diadaptasi, sedangkan aplikasinya diganti dengan MicroChain. Dilisensikan di bawah [GNU GPL v3.0](LICENSE). Rinciannya di [NOTICE.md](NOTICE.md).
